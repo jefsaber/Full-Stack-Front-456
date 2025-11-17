@@ -42,28 +42,33 @@ export interface Product {
     MatProgressSpinnerModule,
   ],
   template: `
-    <div class="mx-auto max-w-6xl px-4 py-10 space-y-6">
-      <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-gray-900">Products</h1>
-        <button 
-          type="button"
-          routerLink="/app"
-          mat-stroked-button
-        >
-          ← Back
-        </button>
-      </div>
+    <div class="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 p-6">
+      <div class="mx-auto max-w-7xl">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+          <div>
+            <h1 class="text-4xl font-bold text-slate-900 mb-2">Shop Products</h1>
+            <p class="text-slate-600">Discover our collection of quality items</p>
+          </div>
+          <button 
+            type="button"
+            routerLink="/app"
+            mat-raised-button
+            class="bg-slate-900 text-white hover:bg-slate-800"
+          >
+            ← Back
+          </button>
+        </div>
 
-      <!-- Filters Card -->
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Filters</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <form [formGroup]="filterForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Filters Card -->
+        <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 mb-8">
+          <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+            <span class="text-2xl">⚙️</span> Filters & Sorting
+          </h2>
+          <form [formGroup]="filterForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Page</mat-label>
-              <input matInput type="number" min="0" formControlName="page" />
+              <input matInput type="number" min="1" formControlName="page" />
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -79,7 +84,7 @@ export interface Product {
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Sort By</mat-label>
               <mat-select formControlName="ordering">
-                <mat-option value="">None</mat-option>
+                <mat-option value="">Default</mat-option>
                 <mat-option value="price">Price (Low to High)</mat-option>
                 <mat-option value="-price">Price (High to Low)</mat-option>
                 <mat-option value="name">Name (A-Z)</mat-option>
@@ -91,54 +96,56 @@ export interface Product {
               mat-raised-button 
               color="primary"
               (click)="applyFilters()"
-              class="md:col-span-2"
+              class="lg:col-span-1 bg-purple-600 text-white hover:bg-purple-700"
             >
               Apply Filters
             </button>
           </form>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- Loading State -->
-      @if (loading$ | async) {
-        <div class="flex justify-center py-12">
-          <mat-spinner diameter="50"></mat-spinner>
         </div>
-      }
 
-      <!-- Error State -->
-      @if (error$ | async; as error) {
-        <mat-card class="border-2 border-red-200 bg-red-50">
-          <mat-card-content>
-            <p class="text-red-700 font-medium">{{ error }}</p>
-          </mat-card-content>
-        </mat-card>
-      }
+        <!-- Loading State -->
+        @if (loading$ | async) {
+          <div class="flex justify-center py-16">
+            <mat-spinner diameter="50" color="accent"></mat-spinner>
+          </div>
+        }
 
-      <!-- Products Grid -->
-      @if (products$ | async; as products) {
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          @for (product of products; track product.id) {
-            <mat-card class="hover:shadow-lg transition-shadow">
-              <mat-card-header>
-                <mat-card-title class="text-lg">{{ product.name }}</mat-card-title>
-              </mat-card-header>
-              <mat-card-content class="space-y-3">
-                <p class="text-2xl font-bold text-indigo-600">\${{ product.price }}</p>
-                <p class="text-sm text-gray-600">Created: {{ product.created_at | date: 'short' }}</p>
-                <div class="flex items-center gap-2">
-                  <span class="text-yellow-500 text-lg">★</span>
-                  <span class="font-semibold">{{ product.avgRating }}/5</span>
+        <!-- Error State -->
+        @if (error$ | async; as error) {
+          <div class="bg-red-50 border border-red-500/50 rounded-2xl p-6 mb-8">
+            <p class="text-red-600 font-medium flex items-center gap-2">
+              <span class="text-2xl">⚠️</span>
+              {{ error }}
+            </p>
+          </div>
+        }
+
+        <!-- Products Grid -->
+        @if (products$ | async; as products) {
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (product of products; track product.id) {
+              <div class="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-2xl hover:border-purple-400 transition-all duration-300">
+                <div class="p-6 space-y-4">
+                  <h3 class="text-lg font-bold text-slate-900 group-hover:text-purple-600 transition">{{ product.name }}</h3>
+                  <div class="flex justify-between items-center">
+                    <span class="text-3xl font-bold text-purple-600">€{{ product.price }}</span>
+                    <div class="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-full">
+                      <span class="text-yellow-500">★</span>
+                      <span class="font-semibold text-sm text-slate-900">{{ product.avgRating }}</span>
+                    </div>
+                  </div>
+                  <p class="text-sm text-slate-500">Created: {{ product.created_at | date: 'short' }}</p>
                 </div>
-              </mat-card-content>
-            </mat-card>
-          } @empty {
-            <div class="col-span-full text-center py-8">
-              <p class="text-gray-600">No products found</p>
-            </div>
-          }
-        </div>
-      }
+              </div>
+            } @empty {
+              <div class="col-span-full text-center py-16">
+                <p class="text-2xl text-slate-400">📦</p>
+                <p class="text-slate-600 text-lg mt-2">No products found</p>
+              </div>
+            }
+          </div>
+        }
+      </div>
     </div>
   `,
 })

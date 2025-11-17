@@ -36,27 +36,32 @@ export interface ProductRating {
     MatProgressSpinnerModule,
   ],
   template: `
-    <div class="mx-auto max-w-2xl px-4 py-10 space-y-6">
-      <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-gray-900">Product Rating</h1>
-        <button 
-          type="button"
-          routerLink="/app"
-          mat-stroked-button
-        >
-          ← Back
-        </button>
-      </div>
+    <div class="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 p-6">
+      <div class="mx-auto max-w-2xl">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+          <div>
+            <h1 class="text-4xl font-bold text-slate-900 mb-2">Product Ratings</h1>
+            <p class="text-slate-600">Check ratings by product ID</p>
+          </div>
+          <button 
+            type="button"
+            routerLink="/app"
+            mat-raised-button
+            class="bg-slate-900 text-white hover:bg-slate-800"
+          >
+            ← Back
+          </button>
+        </div>
 
-      <!-- Search Form -->
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Find Product Rating</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
+        <!-- Search Form Card -->
+        <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 mb-8">
+          <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+            <span class="text-2xl">🔍</span> Find Product Rating
+          </h2>
           <form [formGroup]="searchForm" (ngSubmit)="searchRating()" class="space-y-4">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Product ID</mat-label>
+              <mat-label>Product ID (1-20)</mat-label>
               <input 
                 matInput 
                 type="number" 
@@ -71,7 +76,7 @@ export interface ProductRating {
               mat-raised-button 
               color="primary"
               [disabled]="searchForm.invalid || (loading$ | async)"
-              class="w-full"
+              class="w-full bg-purple-600 text-white hover:bg-purple-700 py-3 text-lg font-semibold"
             >
               @if (loading$ | async) {
                 Loading...
@@ -80,38 +85,52 @@ export interface ProductRating {
               }
             </button>
           </form>
-        </mat-card-content>
-      </mat-card>
+        </div>
 
-      <!-- Error State -->
-      @if (error$ | async; as error) {
-        <mat-card class="border-2 border-red-200 bg-red-50">
-          <mat-card-content>
-            <p class="text-red-700 font-medium">{{ error }}</p>
-          </mat-card-content>
-        </mat-card>
-      }
-
-      <!-- Rating Result -->
-      @if (rating$ | async; as rating) {
-        @if (rating) {
-          <mat-card class="border-2 border-indigo-200">
-            <mat-card-header>
-              <mat-card-title>Rating for Product #{{ rating['product_id'] }}</mat-card-title>
-            </mat-card-header>
-            <mat-card-content class="space-y-4">
-              <div class="bg-indigo-50 p-6 rounded-lg text-center">
-                <p class="text-6xl font-bold text-indigo-600 mb-2">
-                  {{ rating['avg_rating'] }}<span class="text-4xl">★</span>
-                </p>
-                <p class="text-lg text-gray-600">
-                  Based on <strong>{{ rating['count'] }}</strong> reviews
-                </p>
-              </div>
-            </mat-card-content>
-          </mat-card>
+        <!-- Error State -->
+        @if (error$ | async; as error) {
+          <div class="bg-red-50 border border-red-500/50 rounded-2xl p-6 mb-8">
+            <p class="text-red-600 font-medium flex items-center gap-2">
+              <span class="text-2xl">⚠️</span>
+              {{ error }}
+            </p>
+          </div>
         }
-      }
+
+        <!-- Rating Result -->
+        @if (rating$ | async; as rating) {
+          @if (rating) {
+            <div class="space-y-6">
+              <!-- Result Header -->
+              <div class="bg-linear-to-br from-purple-50 to-pink-50 rounded-2xl border border-purple-200 p-8">
+                <h3 class="text-2xl font-bold text-slate-900 mb-2">Product #{{ rating['product_id'] }}</h3>
+                <p class="text-slate-600">Rating Summary</p>
+              </div>
+
+              <!-- Rating Display -->
+              <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+                <div class="mb-4">
+                  <div class="text-8xl font-bold text-yellow-500 mb-2">
+                    {{ rating['avg_rating'] }}
+                  </div>
+                  <div class="flex justify-center gap-1 text-4xl">
+                    @for (star of [1,2,3,4,5]; track star) {
+                      <span [class]="star <= rating['avg_rating'] ? 'text-yellow-500' : 'text-slate-300'">
+                        ★
+                      </span>
+                    }
+                  </div>
+                </div>
+                <div class="mt-8 pt-8 border-t border-slate-200">
+                  <p class="text-slate-600 text-lg">
+                    Based on <span class="font-bold text-slate-900 text-2xl">{{ rating['count'] }}</span> reviews
+                  </p>
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </div>
     </div>
   `,
 })

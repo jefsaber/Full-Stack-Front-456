@@ -23,7 +23,7 @@ import { RouterLink } from '@angular/router';
           routerLink="/app"
           class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring"
         >
-          Accéder à l’app (placeholder)
+          Accéder à l’app
         </button>
       </div>
     </section>
