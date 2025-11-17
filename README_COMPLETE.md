@@ -51,6 +51,44 @@ npx ng serve
 
 ---
 
+## Bonus Features (Production Ready)
+
+### 1. Token Refresh Flow
+
+**Automatic token renewal** when access tokens expire without requiring re-login.
+
+- **Location**: `src/app/services/auth.interceptor.ts`
+- **How it works**: Detects 401 errors → triggers token refresh → retries request
+- **Benefit**: Seamless experience, users never forced to re-login
+
+### 2. Route Guards
+
+**Protects authenticated routes** from unauthorized access.
+
+- **Location**: `src/app/guards/auth.guard.ts`
+- **Protected Routes**: `/shop/products`, `/shop/rating`
+- **Behavior**: Not logged in? → redirected to `/login`
+- **Feature**: Preserves return URL for post-login redirect
+
+### 3. Skeleton Loaders
+
+**Animated placeholders** during data loading for better perceived performance.
+
+- **Location**: `src/app/components/skeleton-loader/skeleton-loader.component.ts`
+- **Types**: Card, text, and table skeletons
+- **Animation**: GPU-accelerated shimmer effect
+- **Integrated**: Products and rating pages show loading skeletons
+
+### 4. Optimistic UI
+
+**Instant visual feedback** when applying filters or searching.
+
+- **Products Page**: Skeleton appears immediately → results fade in
+- **Rating Page**: Search input → skeleton → rating appears
+- **Benefit**: Reduces perceived latency, improves user satisfaction
+
+---
+
 ## 📖 Features
 
 | Feature      | Route            | What It Does                          |
