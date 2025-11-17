@@ -1,13 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { LoginFormComponent } from '../components/login-form/login-form.component';
 import * as AuthActions from '../state/auth/auth.actions';
-import { selectAuthLoading, selectAuthError, selectIsAuthenticated } from '../state/auth/auth.selectors';
+import { selectAuthLoading, selectAuthError, selectAccessToken } from '../state/auth/auth.selectors';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { Subject } from 'rxjs';
+import { takeUntil, filter } from 'rxjs/operators';
 
 @Component({
   standalone: true,
@@ -90,24 +92,37 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     </div>
   `,
 })
-export class LoginPageComponent implements OnInit {
+export class LoginPageComponent implements OnInit, OnDestroy {
   loading$: any;
   error$: any;
-  isAuthenticated$: any;
+  private destroy$ = new Subject<void>();
 
-  constructor(private store: Store, private router: Router) {
+  constructor(
+    private store: Store,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {
     this.loading$ = this.store.select(selectAuthLoading);
     this.error$ = this.store.select(selectAuthError);
-    this.isAuthenticated$ = this.store.select(selectIsAuthenticated);
   }
 
   ngOnInit(): void {
-    // Navigate to /app when user is authenticated
-    this.isAuthenticated$.subscribe((isAuthenticated: boolean) => {
-      if (isAuthenticated) {
+    // Listen for authentication success and navigate
+    this.store
+      .select(selectAccessToken)
+      .pipe(
+        filter((token: string | null) => token !== null),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((token) => {
+        // Navigate to /app after successful login
         this.router.navigate(['/app']);
-      }
-    });
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   handleLogin(credentials: { username: string; password: string }): void {

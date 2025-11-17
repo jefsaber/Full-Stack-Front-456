@@ -15,6 +15,7 @@ import {
   selectRatingError,
 } from '../state/products/products.selectors';
 import { Observable } from 'rxjs';
+import { SkeletonLoaderComponent } from '../components/skeleton-loader/skeleton-loader.component';
 
 export interface ProductRating {
   product_id: number;
@@ -34,6 +35,7 @@ export interface ProductRating {
     MatButtonModule,
     MatCardModule,
     MatProgressSpinnerModule,
+    SkeletonLoaderComponent,
   ],
   template: `
     <div class="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 p-6">
@@ -87,8 +89,16 @@ export interface ProductRating {
           </form>
         </div>
 
+        <!-- Skeleton Loading State -->
+        @if (loading$ | async) {
+          <app-skeleton-loader 
+            [count]="1"
+            type="card">
+          </app-skeleton-loader>
+        }
+
         <!-- Error State -->
-        @if (error$ | async; as error) {
+        @if ((error$ | async); as error) {
           <div class="bg-red-50 border border-red-500/50 rounded-2xl p-6 mb-8">
             <p class="text-red-600 font-medium flex items-center gap-2">
               <span class="text-2xl">⚠️</span>
@@ -97,10 +107,10 @@ export interface ProductRating {
           </div>
         }
 
-        <!-- Rating Result -->
-        @if (rating$ | async; as rating) {
+        <!-- Rating Result (Optimistic UI) -->
+        @if ((rating$ | async); as rating) {
           @if (rating) {
-            <div class="space-y-6">
+            <div class="space-y-6 animate-fadeIn">
               <!-- Result Header -->
               <div class="bg-linear-to-br from-purple-50 to-pink-50 rounded-2xl border border-purple-200 p-8">
                 <h3 class="text-2xl font-bold text-slate-900 mb-2">Product #{{ rating['product_id'] }}</h3>
@@ -133,6 +143,22 @@ export interface ProductRating {
       </div>
     </div>
   `,
+  styles: [`
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    ::ng-deep .animate-fadeIn {
+      animation: fadeIn 0.3s ease-out;
+    }
+  `],
 })
 export class ProductRatingPageComponent {
   searchForm: FormGroup;

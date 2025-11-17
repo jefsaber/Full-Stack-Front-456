@@ -17,6 +17,7 @@ import {
   selectProductsError,
 } from '../state/products/products.selectors';
 import { Observable } from 'rxjs';
+import { SkeletonLoaderComponent } from '../components/skeleton-loader/skeleton-loader.component';
 
 export interface Product {
   id: number;
@@ -40,6 +41,7 @@ export interface Product {
     MatButtonModule,
     MatCardModule,
     MatProgressSpinnerModule,
+    SkeletonLoaderComponent,
   ],
   template: `
     <div class="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 p-6">
@@ -103,11 +105,12 @@ export interface Product {
           </form>
         </div>
 
-        <!-- Loading State -->
+        <!-- Skeleton Loaders -->
         @if (loading$ | async) {
-          <div class="flex justify-center py-16">
-            <mat-spinner diameter="50" color="accent"></mat-spinner>
-          </div>
+          <app-skeleton-loader 
+            [count]="6"
+            type="card">
+          </app-skeleton-loader>
         }
 
         <!-- Error State -->
@@ -120,11 +123,11 @@ export interface Product {
           </div>
         }
 
-        <!-- Products Grid -->
-        @if (products$ | async; as products) {
+        <!-- Products Grid (Optimistic UI) -->
+        @if ((products$ | async); as products) {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @for (product of products; track product.id) {
-              <div class="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-2xl hover:border-purple-400 transition-all duration-300">
+              <div class="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-2xl hover:border-purple-400 transition-all duration-300 animate-fadeIn">
                 <div class="p-6 space-y-4">
                   <h3 class="text-lg font-bold text-slate-900 group-hover:text-purple-600 transition">{{ product.name }}</h3>
                   <div class="flex justify-between items-center">
@@ -148,6 +151,22 @@ export interface Product {
       </div>
     </div>
   `,
+  styles: [`
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    ::ng-deep .animate-fadeIn {
+      animation: fadeIn 0.3s ease-out;
+    }
+  `],
 })
 export class ProductsPageComponent implements OnInit {
   filterForm: FormGroup;
@@ -183,6 +202,8 @@ export class ProductsPageComponent implements OnInit {
       ordering: this.filterForm.get('ordering')?.value || '',
     };
 
+    // Optimistic UI: Dispatch action immediately
+    // The effects will update the store with actual data
     this.store.dispatch(ProductsActions.loadProducts({ filters }));
   }
 }

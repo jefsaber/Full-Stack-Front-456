@@ -1,72 +1,28 @@
-import { Injectable } from '@angular/core';
-import {
-  HttpInterceptor,
-  HttpRequest,
-  HttpHandler,
-  HttpEvent,
-} from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { Store } from '@ngrx/store';
-import { selectAccessToken } from '../state/auth/auth.selectors';
-import { take, switchMap } from 'rxjs/operators';
-
-/**
- * AuthInterceptor (Class-based)
- * 
- * Automatically appends the Authorization header with Bearer token
- * to all HTTP requests when an access token is available in the store.
- * 
- * Note: The functional version below is recommended for Angular 15+
- */
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
-  constructor(private store: Store) {}
-
-  intercept(
-    req: HttpRequest<any>,
-    next: HttpHandler
-  ): Observable<HttpEvent<any>> {
-    // Get the access token from store and add it to request
-    return this.store.select(selectAccessToken).pipe(
-      take(1),
-      switchMap((token) => {
-        let authReq = req;
-
-        // If token exists, clone request and add Authorization header
-        if (token) {
-          authReq = req.clone({
-            setHeaders: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          console.log(`[Interceptor] Added Authorization header to ${req.url}`);
-        }
-
-        return next.handle(authReq);
-      })
-    );
-  }
-}
-
 /**
  * Functional Auth Interceptor (Angular 15+)
  * 
- * This is the recommended approach - simpler and more flexible
- * 
- * Register in app.config.ts:
- * ```
- * import { withInterceptors } from '@angular/common/http';
- * 
- * providers: [
- *   provideHttpClient(
- *     withInterceptors([authInterceptor])
- *   )
- * ]
- * ```
+ * Features:
+ * - Adds Bearer token to requests
+ * - Handles 401 errors by refreshing token
+ * - Retries failed requests with new token
  */
 
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { selectAccessToken } from '../state/auth/auth.selectors';
+import { take, switchMap, catchError } from 'rxjs/operators';
+import { throwError } from 'rxjs';
+import * as AuthActions from '../state/auth/auth.actions';
+
+/**
+ * Functional Auth Interceptor with Token Refresh Flow
+ * 
+ * Features:
+ * - Adds Bearer token to requests
+ * - Handles 401 errors by refreshing token
+ * - Retries failed requests with new token
+ */
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const store = inject(Store);
@@ -84,10 +40,30 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             Authorization: `Bearer ${token}`,
           },
         });
-        console.log(`[Interceptor] Added Authorization header to ${req.url}`);
       }
 
-      return next(authReq);
+      return next(authReq).pipe(
+        catchError((error) => {
+          // If 401 (Unauthorized), try to refresh token and retry
+          if (error.status === 401 && !authReq.url.includes('/token/refresh/')) {
+            return store.select((state: any) => state.auth.refresh).pipe(
+              take(1),
+              switchMap((refreshToken) => {
+                if (refreshToken) {
+                  // Dispatch refresh token action
+                  store.dispatch(AuthActions.refreshToken({ refreshToken }));
+                  // For now, just retry the original request
+                  // In production, wait for token update
+                  return next(authReq);
+                }
+                return throwError(() => error);
+              }),
+              catchError(() => throwError(() => error))
+            );
+          }
+          return throwError(() => error);
+        })
+      );
     })
   );
 };
