@@ -1,25 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-/**
- * Skeleton Loader Component
- * 
- * Displays an animated skeleton screen during data loading.
- * Useful for improving perceived performance.
- * 
- * Usage:
- * ```html
- * <app-skeleton-loader 
- *   *ngIf="isLoading" 
- *   [count]="5"
- *   [type]="'card'">
- * </app-skeleton-loader>
- * 
- * <div *ngIf="!isLoading && products.length > 0">
- *   <!-- actual content -->
- * </div>
- * ```
- */
+
 
 @Component({
   selector: 'app-skeleton-loader',
