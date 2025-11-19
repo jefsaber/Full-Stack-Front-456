@@ -1,12 +1,3 @@
-/**
- * Functional Auth Interceptor (Angular 15+)
- * 
- * Features:
- * - Adds Bearer token to requests
- * - Handles 401 errors by refreshing token
- * - Retries failed requests with new token
- */
-
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Store } from '@ngrx/store';
@@ -14,15 +5,6 @@ import { selectAccessToken } from '../state/auth/auth.selectors';
 import { take, switchMap, catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
 import * as AuthActions from '../state/auth/auth.actions';
-
-/**
- * Functional Auth Interceptor with Token Refresh Flow
- * 
- * Features:
- * - Adds Bearer token to requests
- * - Handles 401 errors by refreshing token
- * - Retries failed requests with new token
- */
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const store = inject(Store);

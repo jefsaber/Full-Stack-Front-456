@@ -1,7 +1,3 @@
-/**
- * API Response Types for Shop Service
- */
-
 export interface AuthTokenResponse {
   access: string;
   refresh: string;

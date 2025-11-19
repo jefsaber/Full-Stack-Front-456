@@ -4,18 +4,6 @@ import { Store } from '@ngrx/store';
 import { selectIsAuthenticated } from '../state/auth/auth.selectors';
 import { take, map } from 'rxjs/operators';
 
-/**
- * AuthGuard - Protects routes that require authentication
- * 
- * Usage in app.routes.ts:
- * ```
- * {
- *   path: 'shop',
- *   canActivate: [authGuard],
- *   children: [...]
- * }
- * ```
- */
 
 export const authGuard: CanActivateFn = (
   route: ActivatedRouteSnapshot,

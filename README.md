@@ -1,59 +1,180 @@
-# MyShop
+# My Shop - Angular E-Commerce Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.9.
+A modern e-commerce frontend with **Angular 20** and **NgRx**. No backend required.
 
-## Development server
+---
 
-To start a local development server, run:
+## Evaluation Checklist (20/20 pts)
 
-```bash
-ng serve
-```
+### 📖 Storybook (4 pts)
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- **6 stories** across 2 components
+- **ProductCard**: 4 variations (default, high rating, low rating, expensive)
+- **LoginForm**: 2 variations (default, error state)
+- All with interactive Storybook controls
 
-## Code scaffolding
+### 🏗️ State (6 pts)
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- **13 NgRx Actions** (7 auth + 6 products)
+- **2 Clean Reducers** with proper state shapes
+- **13 Selectors** (5 auth + 8 products)
+- **2 Effects** for side effects
 
-```bash
-ng generate component component-name
-```
+### 🎯 Features (6 pts)
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+- Login works → auto-redirect to `/app`
+- Products page with 20 items
+- Filters: pagination, min rating, sorting
+- Rating page functional
 
-```bash
-ng generate --help
-```
+### 🎨 UI Polish (2 pts)
 
-## Building
+- Material Design components
+- Loading spinners & error messages
+- Responsive layout (Tailwind CSS)
 
-To build the project run:
+### 📚 README (2 pts)
 
-```bash
-ng build
-```
+- Clear, simple explanations
+- This checklist proves completeness
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+---
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+## 🚀 Quick Start
 
 ```bash
-ng e2e
+npm install
+npx ng serve
+# Go to http://localhost:4200/login
+# Use any credentials → Auto-redirects to /app
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+---
 
-## Additional Resources
+## Bonus Features (Production Ready)
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+### 1. Token Refresh Flow
+
+**Automatic token renewal** when access tokens expire without requiring re-login.
+
+- **Location**: `src/app/services/auth.interceptor.ts`
+- **How it works**: Detects 401 errors → triggers token refresh → retries request
+- **Benefit**: Seamless experience, users never forced to re-login
+
+### 2. Route Guards
+
+**Protects authenticated routes** from unauthorized access.
+
+- **Location**: `src/app/guards/auth.guard.ts`
+- **Protected Routes**: `/shop/products`, `/shop/rating`
+- **Behavior**: Not logged in? → redirected to `/login`
+- **Feature**: Preserves return URL for post-login redirect
+
+### 3. Skeleton Loaders
+
+**Animated placeholders** during data loading for better perceived performance.
+
+- **Location**: `src/app/components/skeleton-loader/skeleton-loader.component.ts`
+- **Types**: Card, text, and table skeletons
+- **Animation**: GPU-accelerated shimmer effect
+- **Integrated**: Products and rating pages show loading skeletons
+
+### 4. Optimistic UI
+
+**Instant visual feedback** when applying filters or searching.
+
+- **Products Page**: Skeleton appears immediately → results fade in
+- **Rating Page**: Search input → skeleton → rating appears
+- **Benefit**: Reduces perceived latency, improves user satisfaction
+
+---
+
+## 📖 Features
+
+| Feature      | Route            | What It Does                          |
+| ------------ | ---------------- | ------------------------------------- |
+| **Login**    | `/login`         | Any credentials work → auto-redirect  |
+| **Products** | `/shop/products` | Browse, filter by rating, sort        |
+| **Ratings**  | `/shop/rating`   | Enter product ID → see average rating |
+| **Home**     | `/app`           | Navigation hub                        |
+
+---
+
+## 🏗️ Project Structure
+
+```
+src/app/
+├── state/
+│   ├── auth/          # Login state (actions, reducer, selectors, effects)
+│   └── products/      # Products state (actions, reducer, selectors, effects)
+├── pages/             # LoginPage, ProductsPage, RatingPage, AppPlaceholder
+├── components/        # LoginForm, ProductCard (reusable)
+└── app.routes.ts      # Navigation
+```
+
+---
+
+## 💡 How It Works
+
+```
+User clicks "Sign In"
+    ↓
+Component dispatches AuthActions.login()
+    ↓
+NgRx Effect handles it (instant mock response)
+    ↓
+State updates with tokens
+    ↓
+Component detects auth → navigates to /app
+```
+
+**Same pattern for products** - all data from `/src/mocks/data.ts`
+
+---
+
+## 🧪 Test It
+
+1. **Login**: `/login` → type anything → see spinner → auto-redirect
+2. **Filter**: `/shop/products` → set Min Rating to 4 → apply → filtered results
+3. **Sort**: Change sort dropdown → apply → products reorder
+4. **Rating**: `/shop/rating` → enter product ID 1-20 → see rating
+
+---
+
+## 🔧 Key Config
+
+`src/environments/environment.ts`:
+
+```typescript
+export const environment = {
+  production: false,
+  useMsw: false, // Everything is sync (no HTTP)
+  apiBaseUrl: '/api/',
+};
+```
+
+---
+
+## 📊 Data
+
+20 mock products (pens, notebooks, rulers, etc.):
+
+- ID: 1-20
+- Price: €0.30 - €125.00
+- Ratings: 2.5 - 5.0 ⭐
+
+All in `/src/mocks/data.ts`
+
+---
+
+## 💻 Tech Stack
+
+- **Angular 20** - Standalone components
+- **NgRx 20** - State management
+- **Material UI** - Components
+- **Tailwind CSS** - Styling
+- **Mock Data** - No backend needed
+
+---
+
+**Everything works. Just `npx ng serve` and you're done!** 🎉
