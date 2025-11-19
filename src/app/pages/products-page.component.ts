@@ -44,61 +44,54 @@ export interface Product {
     SkeletonLoaderComponent,
   ],
   template: `
-    <div class="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 p-6">
-      <div class="mx-auto max-w-7xl">
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-8">
-          <div>
-            <h1 class="text-4xl font-bold text-slate-900 mb-2">Shop Products</h1>
-            <p class="text-slate-600">Discover our collection of quality items</p>
+    <div class="min-h-screen bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 p-6 relative overflow-hidden">
+      <!-- Background Gradient Blobs -->
+      <div class="absolute -top-40 -left-40 w-80 h-80 bg-linear-to-br from-blue-600/20 to-transparent rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-40 -right-40 w-80 h-80 bg-linear-to-tl from-purple-600/20 to-transparent rounded-full blur-3xl"></div>
+
+      <div class="mx-auto max-w-7xl relative z-10">
+        <!-- Sticky Header -->
+        <div class="sticky top-0 z-20 mb-8 bg-slate-900/80 backdrop-blur-md border-b border-white/10 -mx-6 px-6 py-4 rounded-b-2xl">
+          <div class="flex justify-between items-center">
+            <div>
+              <h1 class="text-4xl font-bold bg-linear-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-1">Shop Products</h1>
+              <p class="text-gray-400 text-sm">Discover our collection of quality items</p>
+            </div>
+            <button 
+              type="button"
+              routerLink="/app"
+              class="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-lg transition"
+            >
+              ← Back
+            </button>
           </div>
-          <button 
-            type="button"
-            routerLink="/app"
-            mat-raised-button
-            class="bg-slate-900 text-white hover:bg-slate-800"
-          >
-            ← Back
-          </button>
         </div>
 
         <!-- Filters Card -->
-        <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 mb-8">
-          <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+        <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-8 mb-8 shadow-2xl">
+          <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
             <span class="text-2xl">⚙️</span> Filters & Sorting
           </h2>
-          <form [formGroup]="filterForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Page</mat-label>
-              <input matInput type="number" min="1" formControlName="page" />
-            </mat-form-field>
+          <form [formGroup]="filterForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white/10 rounded-lg border border-white/20 px-3 py-2">
+              <label class="text-xs text-gray-300 block mb-1">Min Rating</label>
+              <input type="number" min="0" max="5" step="0.1" formControlName="minRating" class="w-full bg-transparent text-white outline-none" />
+            </div>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Page Size</mat-label>
-              <input matInput type="number" min="1" formControlName="pageSize" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Min Rating</mat-label>
-              <input matInput type="number" min="0" max="5" step="0.1" formControlName="minRating" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Sort By</mat-label>
-              <mat-select formControlName="ordering">
-                <mat-option value="">Default</mat-option>
-                <mat-option value="price">Price (Low to High)</mat-option>
-                <mat-option value="-price">Price (High to Low)</mat-option>
-                <mat-option value="name">Name (A-Z)</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="bg-white/10 rounded-lg border border-white/20 px-3 py-2">
+              <label class="text-xs text-gray-300 block mb-1">Sort By</label>
+              <select formControlName="ordering" (change)="applyFilters()" class="w-full bg-transparent text-white outline-none">
+                <option value="" class="bg-slate-800">Default</option>
+                <option value="price" class="bg-slate-800">Price (Low to High)</option>
+                <option value="-price" class="bg-slate-800">Price (High to Low)</option>
+                <option value="name" class="bg-slate-800">Name (A-Z)</option>
+              </select>
+            </div>
 
             <button 
-              type="submit"
-              mat-raised-button 
-              color="primary"
+              type="button"
               (click)="applyFilters()"
-              class="lg:col-span-1 bg-purple-600 text-white hover:bg-purple-700"
+              class="bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-2 px-4 rounded-lg font-semibold transition duration-300"
             >
               Apply Filters
             </button>
@@ -115,8 +108,8 @@ export interface Product {
 
         <!-- Error State -->
         @if (error$ | async; as error) {
-          <div class="bg-red-50 border border-red-500/50 rounded-2xl p-6 mb-8">
-            <p class="text-red-600 font-medium flex items-center gap-2">
+          <div class="bg-red-500/10 border border-red-500/50 rounded-2xl p-6 mb-8">
+            <p class="text-red-400 font-medium flex items-center gap-2">
               <span class="text-2xl">⚠️</span>
               {{ error }}
             </p>
@@ -125,27 +118,37 @@ export interface Product {
 
         <!-- Products Grid (Optimistic UI) -->
         @if ((products$ | async); as products) {
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             @for (product of products; track product.id) {
-              <div class="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-2xl hover:border-purple-400 transition-all duration-300 animate-fadeIn">
+              <div class="group bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden hover:border-blue-400/50 hover:shadow-2xl transition-all duration-300 animate-fadeIn">
                 <div class="p-6 space-y-4">
-                  <h3 class="text-lg font-bold text-slate-900 group-hover:text-purple-600 transition">{{ product.name }}</h3>
+                  <h3 class="text-lg font-bold text-white group-hover:text-blue-300 transition">{{ product.name }}</h3>
                   <div class="flex justify-between items-center">
-                    <span class="text-3xl font-bold text-purple-600">€{{ product.price }}</span>
-                    <div class="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-full">
-                      <span class="text-yellow-500">★</span>
-                      <span class="font-semibold text-sm text-slate-900">{{ product.avgRating }}</span>
+                    <span class="text-3xl font-bold bg-linear-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">€{{ product.price }}</span>
+                    <div class="flex items-center gap-1 bg-yellow-500/20 px-3 py-1 rounded-full border border-yellow-500/30">
+                      <span class="text-yellow-400">★</span>
+                      <span class="font-semibold text-sm text-yellow-300">{{ product.avgRating }}</span>
                     </div>
                   </div>
-                  <p class="text-sm text-slate-500">Created: {{ product.created_at | date: 'short' }}</p>
+                  <p class="text-sm text-gray-400">Created: {{ product.created_at | date: 'short' }}</p>
                 </div>
               </div>
             } @empty {
               <div class="col-span-full text-center py-16">
-                <p class="text-2xl text-slate-400">📦</p>
-                <p class="text-slate-600 text-lg mt-2">No products found</p>
+                <p class="text-2xl text-gray-500">📦</p>
+                <p class="text-gray-400 text-lg mt-2">No products found</p>
               </div>
             }
+          </div>
+
+          <!-- Pagination -->
+          <div class="flex justify-center bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4">
+            <mat-paginator
+              [length]="totalProducts"
+              [pageSize]="pageSize"
+              [pageSizeOptions]="pageSizeOptions"
+              (page)="onPageChange($event)"
+            ></mat-paginator>
           </div>
         }
       </div>
@@ -173,14 +176,17 @@ export class ProductsPageComponent implements OnInit {
   products$: Observable<Product[]>;
   loading$: Observable<boolean>;
   error$: Observable<string | null>;
+  
+  pageSize = 6;
+  pageSizeOptions = [3, 6, 12, 20];
+  currentPage = 0;
+  totalProducts = 20; // Total products in mock data
 
   constructor(
     private fb: FormBuilder,
     private store: Store
   ) {
     this.filterForm = this.fb.group({
-      page: [0],
-      pageSize: [6],
       minRating: [0],
       ordering: [''],
     });
@@ -195,15 +201,29 @@ export class ProductsPageComponent implements OnInit {
   }
 
   applyFilters(): void {
+    this.currentPage = 0; // Reset to first page when filters change
     const filters = {
-      page: this.filterForm.get('page')?.value || 0,
-      pageSize: this.filterForm.get('pageSize')?.value || 6,
+      page: this.currentPage,
+      pageSize: this.pageSize,
       minRating: this.filterForm.get('minRating')?.value || 0,
       ordering: this.filterForm.get('ordering')?.value || '',
     };
 
     // Optimistic UI: Dispatch action immediately
-    // The effects will update the store with actual data
+    this.store.dispatch(ProductsActions.loadProducts({ filters }));
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
+
+    const filters = {
+      page: this.currentPage,
+      pageSize: this.pageSize,
+      minRating: this.filterForm.get('minRating')?.value || 0,
+      ordering: this.filterForm.get('ordering')?.value || '',
+    };
+
     this.store.dispatch(ProductsActions.loadProducts({ filters }));
   }
 }

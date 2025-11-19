@@ -16,38 +16,78 @@ import { MatIconModule } from '@angular/material/icon';
     <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <!-- Navbar -->
       <nav class="backdrop-blur-md bg-white/10 border-b border-white/20 sticky top-0 z-50">
-        <div class="mx-auto max-w-7xl px-6 py-4 flex justify-between items-center">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <span class="text-white font-bold text-lg">🛍️</span>
-            </div>
-            <h1 class="text-2xl font-bold text-white">My Shop</h1>
-          </div>
-          
-          <div class="flex items-center gap-4">
-            @if (isAuthenticated$ | async) {
-              <div class="flex items-center gap-3 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">
-                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span class="text-green-200 font-medium text-sm">Authenticated</span>
+        <div class="mx-auto max-w-7xl px-6 py-4">
+          <div class="flex justify-between items-center">
+            <!-- Logo -->
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                <span class="text-white font-bold text-lg">🛍️</span>
               </div>
-              <button
+              <h1 class="text-2xl font-bold text-white">My Shop</h1>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="hidden md:flex items-center gap-6">
+              <button 
                 type="button"
                 mat-button
-                (click)="logout()"
-                class="text-red-300 hover:text-red-100 transition"
+                routerLink="/"
+                class="text-gray-200 hover:text-white transition font-medium"
               >
-                Logout
+                Home
               </button>
-            } @else {
-              <button
+              <button 
                 type="button"
-                mat-raised-button
-                routerLink="/login"
-                class="bg-purple-600 hover:bg-purple-700 text-white"
+                mat-button
+                routerLink="/shop/products"
+                class="text-gray-200 hover:text-white transition font-medium"
               >
-                Sign In
+                Products
               </button>
-            }
+              <button 
+                type="button"
+                mat-button
+                routerLink="/shop/rating"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Ratings
+              </button>
+              <button 
+                type="button"
+                mat-button
+                routerLink="/dev"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Dev
+              </button>
+            </div>
+          
+            <!-- Auth Section -->
+            <div class="flex items-center gap-4">
+              @if (isAuthenticated$ | async) {
+                <div class="flex items-center gap-3 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">
+                  <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  <span class="text-green-200 font-medium text-sm">Authenticated</span>
+                </div>
+                <button
+                  type="button"
+                  mat-button
+                  (click)="logout()"
+                  class="text-red-300 hover:text-red-100 transition"
+                >
+                  Logout
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  mat-raised-button
+                  routerLink="/login"
+                  class="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  Sign In
+                </button>
+              }
+            </div>
           </div>
         </div>
       </nav>
@@ -115,7 +155,7 @@ import { MatIconModule } from '@angular/material/icon';
         <!-- Stats Section -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="rounded-xl bg-white/5 backdrop-blur-md border border-white/10 p-6 text-center hover:bg-white/10 transition">
-            <div class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-2">20+</div>
+            <div class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-2">20</div>
             <p class="text-gray-300">Products Available</p>
           </div>
           <div class="rounded-xl bg-white/5 backdrop-blur-md border border-white/10 p-6 text-center hover:bg-white/10 transition">

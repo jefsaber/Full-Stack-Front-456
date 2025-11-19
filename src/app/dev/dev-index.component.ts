@@ -1,42 +1,111 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 
 @Component({
   standalone: true,
   selector: 'app-dev-index',
-  imports: [RouterLink],
+  imports: [CommonModule, RouterLink, MatButtonModule, MatCardModule],
   template: `
-    <section class="mx-auto max-w-3xl px-4 py-10 space-y-4">
-      <h2 class="text-2xl font-semibold">Dev / MSW — Index</h2>
-      <nav class="grid gap-2">
-        <button
-          type="button"
-          routerLink="/dev/auth"
-          class="rounded border px-3 py-2 text-left hover:bg-gray-50"
-        >
-          Auth: POST /api/auth/token/ (+refresh)
-        </button>
-        <button
-          type="button"
-          routerLink="/dev/products"
-          class="rounded border px-3 py-2 text-left hover:bg-gray-50"
-        >
-          Products: GET /api/products/
-        </button>
-        <button
-          type="button"
-          routerLink="/dev/products/1/rating"
-          class="rounded border px-3 py-2 text-left hover:bg-gray-50"
-        >
-          Product rating: GET /api/products/:id/rating/
-        </button>
+    <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <!-- Navbar -->
+      <nav class="backdrop-blur-md bg-white/10 border-b border-white/20 sticky top-0 z-50">
+        <div class="mx-auto max-w-7xl px-6 py-4 flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <span class="text-white font-bold text-lg">🛍️</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white">My Shop - Dev</h1>
+          </div>
+          
+          <button 
+            type="button"
+            mat-button
+            routerLink="/app"
+            class="text-gray-200 hover:text-white transition"
+          >
+            ← Back to Home
+          </button>
+        </div>
       </nav>
-      <div class="pt-2">
-        <button type="button" routerLink="/" class="text-blue-600 hover:underline">
-          ← Retour accueil
-        </button>
+
+      <!-- Main Content -->
+      <div class="mx-auto max-w-4xl px-6 py-16">
+        <div class="mb-12">
+          <h2 class="text-5xl font-bold text-white mb-4">Development Tools</h2>
+          <p class="text-xl text-purple-200">API endpoints & Mock Service Worker testing</p>
+        </div>
+
+        <!-- Dev Pages Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Auth Endpoint -->
+          <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/50 p-8 hover:border-blue-400/80 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer" routerLink="/dev/auth">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-blue-500/10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-300"></div>
+            <div class="relative z-10">
+              <div class="w-12 h-12 bg-blue-500/30 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-500/50 transition">
+                <span class="text-xl">🔐</span>
+              </div>
+              <h3 class="text-2xl font-bold text-white mb-2">Authentication</h3>
+              <p class="text-blue-200 mb-4 text-sm">POST /api/auth/token/</p>
+              <p class="text-blue-100 text-sm">Test login & token refresh endpoints</p>
+              <span class="inline-flex items-center text-blue-300 font-semibold group-hover:gap-2 transition-all gap-1 mt-4">
+                Open <span class="text-lg">→</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Products Endpoint -->
+          <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/50 p-8 hover:border-purple-400/80 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 cursor-pointer" routerLink="/dev/products">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-purple-500/10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-300"></div>
+            <div class="relative z-10">
+              <div class="w-12 h-12 bg-purple-500/30 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-purple-500/50 transition">
+                <span class="text-xl">📦</span>
+              </div>
+              <h3 class="text-2xl font-bold text-white mb-2">Products</h3>
+              <p class="text-purple-200 mb-4 text-sm">GET /api/products/</p>
+              <p class="text-purple-100 text-sm">Browse & filter products endpoint</p>
+              <span class="inline-flex items-center text-purple-300 font-semibold group-hover:gap-2 transition-all gap-1 mt-4">
+                Open <span class="text-lg">→</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Product Rating Endpoint -->
+          <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/50 p-8 hover:border-green-400/80 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-300 cursor-pointer" routerLink="/dev/products/1/rating">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-green-500/10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-300"></div>
+            <div class="relative z-10">
+              <div class="w-12 h-12 bg-green-500/30 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-green-500/50 transition">
+                <span class="text-xl">⭐</span>
+              </div>
+              <h3 class="text-2xl font-bold text-white mb-2">Product Rating</h3>
+              <p class="text-green-200 mb-4 text-sm">GET /api/products/:id/rating/</p>
+              <p class="text-green-100 text-sm">Check product ratings by ID</p>
+              <span class="inline-flex items-center text-green-300 font-semibold group-hover:gap-2 transition-all gap-1 mt-4">
+                Open <span class="text-lg">→</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="mt-12 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-8">
+          <h3 class="text-xl font-bold text-white mb-4">About Dev Pages</h3>
+          <p class="text-gray-300 mb-3">
+            These pages help you test and debug API endpoints in development. All data is mocked using Mock Service Worker (MSW) for offline development.
+          </p>
+          <p class="text-gray-400 text-sm">
+            💡 Tip: Use your browser's DevTools Network tab to inspect requests and responses.
+          </p>
+        </div>
       </div>
-    </section>
+    </div>
   `,
+  styles: [`
+    :host ::ng-deep .mat-mdc-button {
+      text-transform: none !important;
+    }
+  `]
 })
 export class DevIndexComponent {}

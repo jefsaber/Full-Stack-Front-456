@@ -1,6 +1,8 @@
 import { Component, signal } from '@angular/core';
-import { JsonPipe } from '@angular/common';
+import { CommonModule, JsonPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 
 interface TokenResponse {
   access: string;
@@ -13,45 +15,88 @@ interface RefreshResponse {
 @Component({
   standalone: true,
   selector: 'app-dev-auth',
-  imports: [JsonPipe, RouterLink],
+  imports: [CommonModule, JsonPipe, RouterLink, MatButtonModule, MatCardModule],
   template: `
-    <section class="mx-auto max-w-3xl px-4 py-10">
-      <nav class="mb-4 flex gap-3 text-sm">
-        <button type="button" routerLink="/dev" class="text-blue-600 hover:underline">
-          ← Dev index
-        </button>
-        <button type="button" routerLink="/" class="text-blue-600 hover:underline">Accueil</button>
+    <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <!-- Navbar -->
+      <nav class="backdrop-blur-md bg-white/10 border-b border-white/20 sticky top-0 z-50">
+        <div class="mx-auto max-w-7xl px-6 py-4 flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <span class="text-white font-bold text-lg">🔐</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white">Authentication Endpoint</h1>
+          </div>
+          
+          <button 
+            type="button"
+            mat-button
+            routerLink="/dev"
+            class="text-gray-200 hover:text-white transition"
+          >
+            ← Back to Dev
+          </button>
+        </div>
       </nav>
 
-      <h2 class="text-2xl font-semibold">/api/auth/token/ & /api/auth/token/refresh/</h2>
-      <div class="mt-4 flex gap-3">
-        <button
-          class="rounded-lg bg-blue-600 px-3 py-2 text-white hover:bg-blue-700"
-          (click)="login()"
-        >
-          POST token
-        </button>
-        <button
-          class="rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-700"
-          (click)="refresh()"
-        >
-          POST refresh
-        </button>
-      </div>
+      <!-- Main Content -->
+      <div class="mx-auto max-w-2xl px-6 py-16">
+        <div class="mb-12">
+          <h2 class="text-5xl font-bold text-white mb-4">/api/auth/token/</h2>
+          <p class="text-xl text-purple-200">Test authentication & token refresh endpoints</p>
+        </div>
 
-      @if (loginResp(); as r) {
-        <h3 class="mt-4 font-medium">Login response</h3>
-        <pre class="rounded bg-gray-50 p-3 text-sm">{{ r | json }}</pre>
-      }
-      @if (refreshResp(); as rr) {
-        <h3 class="mt-4 font-medium">Refresh response</h3>
-        <pre class="rounded bg-gray-50 p-3 text-sm">{{ rr | json }}</pre>
-      }
-      @if (err()) {
-        <p class="mt-2 text-sm text-red-600">{{ err() }}</p>
-      }
-    </section>
+        <!-- Buttons -->
+        <div class="flex gap-4 mb-8">
+          <button
+            type="button"
+            (click)="login()"
+            class="bg-blue-600 hover:bg-blue-700 text-white flex-1 py-3 px-4 text-lg font-semibold rounded-lg transition"
+          >
+            POST /token (Login)
+          </button>
+          <button
+            type="button"
+            (click)="refresh()"
+            class="bg-emerald-600 hover:bg-emerald-700 text-white flex-1 py-3 px-4 text-lg font-semibold rounded-lg transition"
+          >
+            POST /refresh
+          </button>
+        </div>
+
+        <!-- Response Section -->
+        <div class="space-y-6">
+          @if (loginResp(); as r) {
+            <div class="rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-6">
+              <h3 class="text-lg font-bold text-white mb-4">Login Response</h3>
+              <pre class="rounded-lg bg-slate-950/50 p-4 text-sm text-green-300 overflow-x-auto">{{ r | json }}</pre>
+            </div>
+          }
+
+          @if (refreshResp(); as rr) {
+            <div class="rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-6">
+              <h3 class="text-lg font-bold text-white mb-4">Refresh Response</h3>
+              <pre class="rounded-lg bg-slate-950/50 p-4 text-sm text-green-300 overflow-x-auto">{{ rr | json }}</pre>
+            </div>
+          }
+
+          @if (err()) {
+            <div class="rounded-2xl bg-red-500/20 border border-red-500/50 p-6">
+              <p class="text-red-200 font-medium flex items-center gap-2">
+                <span class="text-lg">⚠️</span>
+                {{ err() }}
+              </p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
   `,
+  styles: [`
+    :host ::ng-deep .mat-mdc-button {
+      text-transform: none !important;
+    }
+  `]
 })
 export class DevAuthComponent {
   readonly loginResp = signal<TokenResponse | null>(null);

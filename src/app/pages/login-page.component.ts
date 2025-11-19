@@ -36,9 +36,6 @@ import { takeUntil, filter } from 'rxjs/operators';
                 <span class="text-3xl">🛍️</span>
               </div>
             </div>
-            <mat-card-title class="text-4xl font-bold text-center text-white">
-              My Shop
-            </mat-card-title>
             <p class="text-center text-purple-200 mt-3 text-sm font-medium">Sign in to your account</p>
           </mat-card-header>
 
