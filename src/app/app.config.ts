@@ -12,9 +12,12 @@ import { provideEffects } from '@ngrx/effects';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { authReducer } from './state/auth/auth.reducer';
 import { productsReducer } from './state/products/products.reducer';
+import { cartReducer } from './state/cart/cart.reducer';
 import { AuthEffects } from './state/auth/auth.effects';
 import { ProductsEffects } from './state/products/products.effects';
+import { CartEffects } from './state/cart/cart.effects';
 import { authInterceptor } from './services/auth.interceptor';
+import { StorageService } from './services/storage.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,8 +25,9 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor])),
-    provideStore({ auth: authReducer, products: productsReducer }),
-    provideEffects([AuthEffects, ProductsEffects]),
+    provideStore({ auth: authReducer, products: productsReducer, cart: cartReducer }),
+    provideEffects([AuthEffects, ProductsEffects, CartEffects]),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
+    StorageService, // Initialize on app startup
   ],
 };

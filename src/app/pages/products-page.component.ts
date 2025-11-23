@@ -9,13 +9,16 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { Store } from '@ngrx/store';
 import * as ProductsActions from '../state/products/products.actions';
+import * as CartActions from '../state/cart/cart.actions';
 import {
   selectAllProducts,
   selectProductsLoading,
   selectProductsError,
 } from '../state/products/products.selectors';
+import { selectCartItems } from '../state/cart/cart.selectors';
 import { Observable } from 'rxjs';
 import { SkeletonLoaderComponent } from '../components/skeleton-loader/skeleton-loader.component';
 
@@ -41,6 +44,7 @@ export interface Product {
     MatButtonModule,
     MatCardModule,
     MatProgressSpinnerModule,
+    MatSnackBarModule,
     SkeletonLoaderComponent,
   ],
   template: `
@@ -131,6 +135,34 @@ export interface Product {
                     </div>
                   </div>
                   <p class="text-sm text-gray-400">Created: {{ product.created_at | date: 'short' }}</p>
+
+                  <!-- Action Buttons -->
+                  <div class="flex gap-2 pt-4">
+                    <button
+                      type="button"
+                      [routerLink]="['/shop/products', product.id]"
+                      class="flex-1 bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/50 text-blue-300 py-2 px-3 rounded-lg font-semibold transition text-sm"
+                    >
+                      View Details
+                    </button>
+                    @if (isProductInCart(product.id) | async) {
+                      <button
+                        type="button"
+                        (click)="removeFromCart(product.id)"
+                        class="flex-1 bg-linear-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white py-2 px-3 rounded-lg font-semibold transition text-sm"
+                      >
+                        ✕ Remove
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        (click)="addToCart(product)"
+                        class="flex-1 bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white py-2 px-3 rounded-lg font-semibold transition text-sm"
+                      >
+                        🛒 Add
+                      </button>
+                    }
+                  </div>
                 </div>
               </div>
             } @empty {
@@ -176,6 +208,7 @@ export class ProductsPageComponent implements OnInit {
   products$: Observable<Product[]>;
   loading$: Observable<boolean>;
   error$: Observable<string | null>;
+  cartItems$: Observable<any[]>;
   
   pageSize = 6;
   pageSizeOptions = [3, 6, 12, 20];
@@ -184,7 +217,8 @@ export class ProductsPageComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private store: Store
+    private store: Store,
+    private snackBar: MatSnackBar
   ) {
     this.filterForm = this.fb.group({
       minRating: [0],
@@ -194,6 +228,7 @@ export class ProductsPageComponent implements OnInit {
     this.products$ = this.store.select(selectAllProducts);
     this.loading$ = this.store.select(selectProductsLoading);
     this.error$ = this.store.select(selectProductsError);
+    this.cartItems$ = this.store.select(selectCartItems);
   }
 
   ngOnInit(): void {
@@ -225,6 +260,37 @@ export class ProductsPageComponent implements OnInit {
     };
 
     this.store.dispatch(ProductsActions.loadProducts({ filters }));
+  }
+
+  isProductInCart(productId: number): Observable<boolean> {
+    return new Observable((observer) => {
+      this.cartItems$.subscribe((items) => {
+        const isInCart = items.some((item) => item.id === productId);
+        observer.next(isInCart);
+      });
+    });
+  }
+
+  addToCart(product: Product): void {
+    this.store.dispatch(
+      CartActions.addItem({ product: { ...product }, quantity: 1 })
+    );
+
+    this.snackBar.open(
+      `✓ ${product.name} added to cart`,
+      'Close',
+      { duration: 2000, panelClass: ['success-snackbar'] }
+    );
+  }
+
+  removeFromCart(productId: number): void {
+    this.store.dispatch(CartActions.removeItem({ productId }));
+
+    this.snackBar.open(
+      `✓ Product removed from cart`,
+      'Close',
+      { duration: 2000, panelClass: ['success-snackbar'] }
+    );
   }
 }
 

@@ -53,4 +53,65 @@ export const handlers = [
       { status: 200 },
     );
   }),
+
+  // Product details: GET /api/products/:id/
+  http.get(`${API}/products/:id/`, async ({ params }) => {
+    const id = Number(params['id']);
+    const p = products.find((x) => x.id === id);
+    if (!p) return HttpResponse.json({ detail: 'Not found.' }, { status: 404 });
+    return HttpResponse.json(
+      {
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        created_at: p.created_at,
+        avgRating: avgRating(p.ratings),
+        description: `Premium quality ${p.name}. Highly rated by customers. Available in stock.`,
+        stock: Math.floor(Math.random() * 50) + 1,
+        reviews_count: p.ratings.length,
+      },
+      { status: 200 },
+    );
+  }),
+
+  // Cart validation: POST /api/cart/validate/
+  http.post(`${API}/cart/validate/`, async ({ request }) => {
+    const body = await request.json() as any;
+    const items = body.items || [];
+    
+    const subtotal = items.reduce(
+      (sum: number, item: any) => sum + (item.price * item.quantity),
+      0
+    );
+    const shipping = subtotal >= 50 ? 0 : 5.99;
+    const tax = subtotal * 0.19; // 19% VAT
+    const total = subtotal + shipping + tax;
+
+    return HttpResponse.json(
+      {
+        subtotal: parseFloat(subtotal.toFixed(2)),
+        shipping: parseFloat(shipping.toFixed(2)),
+        tax: parseFloat(tax.toFixed(2)),
+        total: parseFloat(total.toFixed(2)),
+      },
+      { status: 200 },
+    );
+  }),
+
+  // Order creation: POST /api/order/
+  http.post(`${API}/order/`, async ({ request }) => {
+    const body = await request.json() as any;
+    const orderNumber = 'ORD-' + Date.now();
+    
+    return HttpResponse.json(
+      {
+        order_number: orderNumber,
+        status: 'confirmed',
+        total: body.total,
+        delivery_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        tracking_url: 'https://example.com/track/' + orderNumber,
+      },
+      { status: 201 },
+    );
+  }),
 ];

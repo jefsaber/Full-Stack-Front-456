@@ -7,11 +7,12 @@ import * as AuthActions from './state/auth/auth.actions';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { CartIconComponent } from './components/cart-icon/cart-icon.component';
 
 @Component({
   standalone: true,
   selector: 'app-placeholder',
-  imports: [CommonModule, RouterLink, MatButtonModule, MatCardModule, MatIconModule],
+  imports: [CommonModule, RouterLink, MatButtonModule, MatCardModule, MatIconModule, CartIconComponent],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <!-- Navbar -->
@@ -64,6 +65,9 @@ import { MatIconModule } from '@angular/material/icon';
           
             <!-- Auth Section -->
             <div class="flex items-center gap-4">
+              <!-- Cart Icon -->
+              <app-cart-icon></app-cart-icon>
+
               @if (isAuthenticated$ | async) {
                 <div class="flex items-center gap-3 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">
                   <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>

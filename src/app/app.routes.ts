@@ -9,6 +9,9 @@ import { AppPlaceholderComponent } from './app-placeholder.component';
 import { LoginPageComponent } from './pages/login-page.component';
 import { ProductsPageComponent } from './pages/products-page.component';
 import { ProductRatingPageComponent } from './pages/product-rating-page.component';
+import { ProductDetailsPageComponent } from './pages/product-details-page.component';
+import { CartPageComponent } from './pages/cart-page.component';
+import { CheckoutPageComponent } from './pages/checkout-page.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent, pathMatch: 'full' },
@@ -18,7 +21,10 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: 'products', component: ProductsPageComponent },
+      { path: 'products/:id', component: ProductDetailsPageComponent },
       { path: 'rating', component: ProductRatingPageComponent },
+      { path: 'cart', component: CartPageComponent },
+      { path: 'checkout', component: CheckoutPageComponent },
     ],
   },
   { path: 'dev', component: DevIndexComponent },

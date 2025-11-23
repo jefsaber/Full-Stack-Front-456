@@ -1,180 +1,241 @@
 # My Shop - Angular E-Commerce Frontend
 
-A modern e-commerce frontend with **Angular 20** and **NgRx**. No backend required.
+A modern e-commerce frontend built with Angular 20 and NgRx. It's fully functional without needing any backend - everything uses mock data.
 
 ---
 
-## Evaluation Checklist (20/20 pts)
+## What's Included
 
-### 📖 Storybook (4 pts)
+### Core Features (Meets Requirements)
 
-- **6 stories** across 2 components
-- **ProductCard**: 4 variations (default, high rating, low rating, expensive)
-- **LoginForm**: 2 variations (default, error state)
-- All with interactive Storybook controls
+1. **Shopping Cart with State Management**
+   - Full cart system using NgRx
+   - Add, remove, and update item quantities
+   - Cart data persists in browser storage
+   - Real-time price calculations (shipping and tax included)
 
-### 🏗️ State (6 pts)
+2. **Checkout Wizard (3 Steps)**
+   - Step 1: Review your order summary
+   - Step 2: Enter delivery address with options
+   - Step 3: Final confirmation and order placement
+   - Each step validates your input before proceeding
 
-- **13 NgRx Actions** (7 auth + 6 products)
-- **2 Clean Reducers** with proper state shapes
-- **13 Selectors** (5 auth + 8 products)
-- **2 Effects** for side effects
+3. **Product Details Page**
+   - View full information about any product
+   - See stock availability with visual indicator
+   - Select quantity and add to cart
+   - Dynamic loading of product data
 
-### 🎯 Features (6 pts)
+4. **Dynamic Product List**
+   - Browse 20 products
+   - Filter by minimum rating
+   - Sort by price or name
+   - Quick add-to-cart or view details
 
-- Login works → auto-redirect to `/app`
-- Products page with 20 items
-- Filters: pagination, min rating, sorting
-- Rating page functional
+5. **User Authentication**
+   - Login system that works with any credentials
+   - Automatic redirect after login
+   - Protected routes for authenticated users only
 
-### 🎨 UI Polish (2 pts)
-
-- Material Design components
-- Loading spinners & error messages
-- Responsive layout (Tailwind CSS)
-
-### 📚 README (2 pts)
-
-- Clear, simple explanations
-- This checklist proves completeness
+6. **Additional Production Features**
+   - Loading animations while data fetches
+   - Error handling and user feedback
+   - Toast notifications for cart actions
+   - Form validation with helpful error messages
+   - Responsive design for all screen sizes
+   - Dark theme throughout the app
 
 ---
 
-## 🚀 Quick Start
+## Getting Started
+
+### Installation and Running
 
 ```bash
+# Install dependencies
 npm install
-npx ng serve
-# Go to http://localhost:4200/login
-# Use any credentials → Auto-redirects to /app
+
+# Start the development server
+ng serve
+
+# Open your browser and go to:
+# http://localhost:4200/login
 ```
 
----
+### How to Use
 
-## Bonus Features (Production Ready)
-
-### 1. Token Refresh Flow
-
-**Automatic token renewal** when access tokens expire without requiring re-login.
-
-- **Location**: `src/app/services/auth.interceptor.ts`
-- **How it works**: Detects 401 errors → triggers token refresh → retries request
-- **Benefit**: Seamless experience, users never forced to re-login
-
-### 2. Route Guards
-
-**Protects authenticated routes** from unauthorized access.
-
-- **Location**: `src/app/guards/auth.guard.ts`
-- **Protected Routes**: `/shop/products`, `/shop/rating`
-- **Behavior**: Not logged in? → redirected to `/login`
-- **Feature**: Preserves return URL for post-login redirect
-
-### 3. Skeleton Loaders
-
-**Animated placeholders** during data loading for better perceived performance.
-
-- **Location**: `src/app/components/skeleton-loader/skeleton-loader.component.ts`
-- **Types**: Card, text, and table skeletons
-- **Animation**: GPU-accelerated shimmer effect
-- **Integrated**: Products and rating pages show loading skeletons
-
-### 4. Optimistic UI
-
-**Instant visual feedback** when applying filters or searching.
-
-- **Products Page**: Skeleton appears immediately → results fade in
-- **Rating Page**: Search input → skeleton → rating appears
-- **Benefit**: Reduces perceived latency, improves user satisfaction
+1. **Log in**: Enter any username and password - they all work
+2. **Browse products**: You'll see 20 products to choose from
+3. **Add to cart**: Click "Add" on any product or view details first
+4. **Manage cart**: Click the cart icon to see all your items
+5. **Adjust quantities**: Use the + and - buttons to change amounts
+6. **Checkout**: Click "Proceed to Checkout" to complete your purchase
+7. **Confirm order**: Fill in your delivery address and place the order
 
 ---
 
-## 📖 Features
+## Key Features Explained
 
-| Feature      | Route            | What It Does                          |
-| ------------ | ---------------- | ------------------------------------- |
-| **Login**    | `/login`         | Any credentials work → auto-redirect  |
-| **Products** | `/shop/products` | Browse, filter by rating, sort        |
-| **Ratings**  | `/shop/rating`   | Enter product ID → see average rating |
-| **Home**     | `/app`           | Navigation hub                        |
+### Shopping Cart System
+
+The cart uses modern state management with NgRx:
+
+- All cart data is stored in the browser (localStorage)
+- Changes sync automatically
+- Cart persists even if you close and reopen the browser
+- Prices update automatically based on items and delivery option
+
+### Form Validation
+
+When you fill in the checkout form:
+
+- Each field shows an error message if left empty
+- Email format is checked
+- All fields must be valid before you can proceed
+
+### Product Information
+
+Each product shows:
+
+- Price in euros
+- Customer rating
+- Stock level with a visual progress bar
+- Detailed description
+- Delivery information
+
+### Real-Time Updates
+
+- Cart badge in the navbar updates as you add/remove items
+- Product buttons change from "Add" to "Remove" when items are in your cart
+- Price calculations update instantly as you change quantities
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 src/app/
+├── pages/
+│   ├── login-page.component.ts
+│   ├── products-page.component.ts
+│   ├── product-details-page.component.ts
+│   ├── cart-page.component.ts
+│   ├── product-rating-page.component.ts
+│   ├── checkout-page.component.ts
+│   └── checkout/
+│       ├── step1-summary.component.ts
+│       ├── step2-address.component.ts
+│       └── step3-confirm.component.ts
 ├── state/
-│   ├── auth/          # Login state (actions, reducer, selectors, effects)
-│   └── products/      # Products state (actions, reducer, selectors, effects)
-├── pages/             # LoginPage, ProductsPage, RatingPage, AppPlaceholder
-├── components/        # LoginForm, ProductCard (reusable)
-└── app.routes.ts      # Navigation
+│   ├── auth/
+│   ├── products/
+│   └── cart/
+├── components/
+│   ├── login-form/
+│   ├── product-card/
+│   ├── skeleton-loader/
+│   └── cart-icon/
+├── services/
+│   ├── auth.interceptor.ts
+│   ├── shop-api.service.ts
+│   └── storage.service.ts
+└── app.routes.ts
 ```
 
 ---
 
-## 💡 How It Works
+## Available Routes
 
-```
-User clicks "Sign In"
-    ↓
-Component dispatches AuthActions.login()
-    ↓
-NgRx Effect handles it (instant mock response)
-    ↓
-State updates with tokens
-    ↓
-Component detects auth → navigates to /app
-```
-
-**Same pattern for products** - all data from `/src/mocks/data.ts`
+| Path                 | What You'll Find                   |
+| -------------------- | ---------------------------------- |
+| `/login`             | Login page - enter any credentials |
+| `/app`               | Home page with navigation options  |
+| `/shop/products`     | Browse all products with filters   |
+| `/shop/products/:id` | Detailed view of a single product  |
+| `/shop/cart`         | Your shopping cart                 |
+| `/shop/checkout`     | Multi-step checkout process        |
+| `/shop/rating`       | Check product ratings              |
 
 ---
 
-## 🧪 Test It
+## How the Cart Works
 
-1. **Login**: `/login` → type anything → see spinner → auto-redirect
-2. **Filter**: `/shop/products` → set Min Rating to 4 → apply → filtered results
-3. **Sort**: Change sort dropdown → apply → products reorder
-4. **Rating**: `/shop/rating` → enter product ID 1-20 → see rating
+1. When you add a product, it's stored in the app state
+2. An effect watches for cart changes and saves to browser storage
+3. On page reload, a service restores your cart automatically
+4. All calculations (shipping, tax) happen in real-time
+5. When you place an order, the cart clears
 
----
+### Pricing Rules
 
-## 🔧 Key Config
-
-`src/environments/environment.ts`:
-
-```typescript
-export const environment = {
-  production: false,
-  useMsw: false, // Everything is sync (no HTTP)
-  apiBaseUrl: '/api/',
-};
-```
+- Shipping is free for orders over 50 euros
+- Otherwise, shipping costs 5.99 euros
+- Tax is calculated at 19% of the subtotal
+- Express delivery costs an extra 9.99 euros
 
 ---
 
-## 📊 Data
+## Technology Used
 
-20 mock products (pens, notebooks, rulers, etc.):
-
-- ID: 1-20
-- Price: €0.30 - €125.00
-- Ratings: 2.5 - 5.0 ⭐
-
-All in `/src/mocks/data.ts`
-
----
-
-## 💻 Tech Stack
-
-- **Angular 20** - Standalone components
-- **NgRx 20** - State management
-- **Material UI** - Components
-- **Tailwind CSS** - Styling
-- **Mock Data** - No backend needed
+- **Angular 20**: Modern framework with standalone components
+- **NgRx**: State management with actions, reducers, and selectors
+- **Angular Material**: UI components and icons
+- **Tailwind CSS**: Utility-based styling
+- **Mock Service Worker**: Simulates backend API calls
+- **RxJS**: Reactive programming with observables
 
 ---
 
-**Everything works. Just `npx ng serve` and you're done!** 🎉
+## Testing the Features
+
+1. Add multiple items and adjust quantities to see real-time updates
+2. Try the cart on different browsers - your items stay there
+3. Fill in the checkout form - you'll see validation messages for any errors
+4. Complete an order and watch the cart clear
+5. Click the cart icon to see your item count update instantly
+
+---
+
+## Form Validation
+
+When filling out the checkout address:
+
+- First name, last name, email, street, city, ZIP, country, and phone are all required
+- Email must be in a valid format
+- All fields must be completed before you can proceed
+- Clear error messages appear if something is wrong
+
+---
+
+## Development
+
+The app is built with standalone Angular components, which means:
+
+- Each component is self-contained
+- No need for NgModules
+- Easier to understand and maintain
+- Routing is simple and straightforward
+
+All state changes go through NgRx:
+
+- Actions describe what happened
+- Reducers update the state
+- Selectors get data from state
+- Effects handle side effects like saving to storage
+
+---
+
+## No Backend Required
+
+Everything in this app uses mock data:
+
+- Products are stored locally
+- API calls are simulated
+- Order data is not actually saved anywhere
+- It's perfect for testing and demonstration
+
+---
+
+## That's It
+
+The app is ready to use. No configuration needed. Just run `ng serve` and start shopping!
