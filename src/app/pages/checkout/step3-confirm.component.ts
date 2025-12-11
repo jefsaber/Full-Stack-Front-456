@@ -11,8 +11,8 @@ import {
 } from '../../state/cart/cart.selectors';
 import { Observable } from 'rxjs';
 import { CartItem } from '../../state/cart/cart.actions';
-import { HttpClient } from '@angular/common/http';
 import * as CartActions from '../../state/cart/cart.actions';
+import { OrdersStorageService } from '../../services/orders-storage.service';
 
 interface OrderConfirmation {
   order_number: string;
@@ -216,7 +216,7 @@ export class CheckoutConfirmComponent implements OnInit {
 
   constructor(
     private store: Store,
-    private http: HttpClient
+    private ordersStorage: OrdersStorageService
   ) {
     this.items$ = this.store.select(selectCartItems);
     this.cartTotal$ = this.store.select(selectCartTotal);
@@ -235,27 +235,48 @@ export class CheckoutConfirmComponent implements OnInit {
 
     this.placing = true;
 
-    this.totalWithShipping$.subscribe((total) => {
-      const orderPayload = {
-        items: (this.items$ as any).value,
-        total,
-        address: this.addressData,
-      };
+    // Subscribe to get actual values
+    const itemsSub = this.items$.subscribe((items) => {
+      const totalSub = this.totalWithShipping$.subscribe((total) => {
+        const shippingSub = this.shippingCost$.subscribe((shipping) => {
+          const subtotalSub = this.cartTotal$.subscribe((subtotal) => {
+            // Calculate tax (19%)
+            const tax = subtotal * 0.19;
 
-      this.http.post<OrderConfirmation>('/api/order/', orderPayload).subscribe({
-        next: (confirmation) => {
-          this.orderConfirmation = confirmation;
-          this.placing = false;
+            const orderData = {
+              items: items,
+              total,
+              subtotal,
+              tax: Math.round(tax * 100) / 100,
+              shipping,
+              address: this.addressData,
+              deliveryOption: this.addressData?.deliveryOption || 'standard',
+            };
 
-          // Clear cart after successful order
-          this.store.dispatch(CartActions.clearCart());
-        },
-        error: (err) => {
-          console.error('Order placement error:', err);
-          this.placing = false;
-          alert('Failed to place order. Please try again.');
-        },
+            // Save order to storage
+            const savedOrder = this.ordersStorage.addOrder(orderData);
+            
+            this.orderConfirmation = {
+              order_number: `ORD-${savedOrder.id}`,
+              status: 'confirmed',
+              total: total,
+              delivery_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+              tracking_url: savedOrder.trackingUrl || '',
+            };
+            
+            this.placing = false;
+
+            // Clear cart after successful order
+            this.store.dispatch(CartActions.clearCart());
+
+            // Unsubscribe all
+            subtotalSub.unsubscribe();
+            shippingSub.unsubscribe();
+            totalSub.unsubscribe();
+            itemsSub.unsubscribe();
+          });
+        });
       });
-    }).unsubscribe();
+    });
   }
 }

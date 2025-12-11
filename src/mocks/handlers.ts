@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { products } from './data';
 import { paginate, avgRating } from './utils';
 
-const API = '/api';
+const API = 'http://localhost:8000/api';
 
 export const handlers = [
   // Auth: POST /api/auth/token/ -> { access, refresh }
@@ -113,5 +113,208 @@ export const handlers = [
       },
       { status: 201 },
     );
+  }),
+
+  // Get user profile: GET /api/me/
+  http.get(`${API}/me/`, async () => {
+    return HttpResponse.json(
+      {
+        id: '1',
+        username: 'john_doe',
+        email: 'john@example.com',
+        fullName: 'John Doe',
+        defaultAddress: {
+          street: '123 Rue de la Paix',
+          city: 'Paris',
+          zipCode: '75001',
+          country: 'France',
+        },
+        preferences: {
+          newsletter: true,
+          defaultMinRating: 3,
+        },
+        orders: [
+          {
+            id: '1',
+            date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+            total: 127.99,
+            status: 'livree',
+            itemCount: 3,
+          },
+          {
+            id: '2',
+            date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+            total: 54.50,
+            status: 'livree',
+            itemCount: 2,
+          },
+          {
+            id: '3',
+            date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+            total: 89.99,
+            status: 'expediee',
+            itemCount: 1,
+          },
+        ],
+      },
+      { status: 200 },
+    );
+  }),
+
+  // Update user preferences: PATCH /api/me/
+  http.patch(`${API}/me/`, async ({ request }) => {
+    const body = await request.json() as any;
+    const preferences = body.preferences || {};
+    
+    return HttpResponse.json(
+      {
+        newsletter: preferences.newsletter ?? true,
+        defaultMinRating: preferences.defaultMinRating ?? 0,
+      },
+      { status: 200 },
+    );
+  }),
+
+  // Get user orders: GET /api/me/orders/
+  http.get(`${API}/me/orders/`, async () => {
+    return HttpResponse.json(
+      [
+        {
+          id: '1',
+          date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          total: 127.99,
+          status: 'livree',
+          itemCount: 3,
+        },
+        {
+          id: '2',
+          date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+          total: 54.50,
+          status: 'livree',
+          itemCount: 2,
+        },
+        {
+          id: '3',
+          date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          total: 89.99,
+          status: 'expediee',
+          itemCount: 1,
+        },
+      ],
+      { status: 200 },
+    );
+  }),
+
+  // Get order details: GET /api/orders/:id/
+  http.get(`${API}/orders/:id/`, async ({ params }) => {
+    const id = params['id'];
+    const orderId = String(id);
+
+    // Mock data for different orders
+    const orderData: Record<string, any> = {
+      '1': {
+        id: '1',
+        date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        total: 127.99,
+        status: 'livree',
+        itemCount: 3,
+        items: [
+          {
+            productId: 1,
+            productName: 'Gaming Mouse Pro',
+            quantity: 1,
+            price: 49.99,
+          },
+          {
+            productId: 2,
+            productName: 'Mechanical Keyboard RGB',
+            quantity: 1,
+            price: 59.99,
+          },
+          {
+            productId: 3,
+            productName: 'USB-C Cable Pack',
+            quantity: 2,
+            price: 9.00,
+          },
+        ],
+        subtotal: 99.99,
+        tax: 19.00,
+        shipping: 9.00,
+        deliveryAddress: {
+          street: '123 Rue de la Paix',
+          city: 'Paris',
+          zipCode: '75001',
+          country: 'France',
+        },
+        deliveryOption: 'standard',
+        trackingUrl: 'https://example.com/track/ORD-001',
+      },
+      '2': {
+        id: '2',
+        date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+        total: 54.50,
+        status: 'livree',
+        itemCount: 2,
+        items: [
+          {
+            productId: 4,
+            productName: 'Monitor Stand',
+            quantity: 1,
+            price: 39.99,
+          },
+          {
+            productId: 5,
+            productName: 'Desk Lamp LED',
+            quantity: 1,
+            price: 12.00,
+          },
+        ],
+        subtotal: 40.00,
+        tax: 7.60,
+        shipping: 6.90,
+        deliveryAddress: {
+          street: '123 Rue de la Paix',
+          city: 'Paris',
+          zipCode: '75001',
+          country: 'France',
+        },
+        deliveryOption: 'standard',
+        trackingUrl: 'https://example.com/track/ORD-002',
+      },
+      '3': {
+        id: '3',
+        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        total: 89.99,
+        status: 'expediee',
+        itemCount: 1,
+        items: [
+          {
+            productId: 6,
+            productName: 'Premium Webcam 4K',
+            quantity: 1,
+            price: 75.99,
+          },
+        ],
+        subtotal: 75.99,
+        tax: 14.44,
+        shipping: -0.44, // Free shipping (subtotal > 50)
+        deliveryAddress: {
+          street: '123 Rue de la Paix',
+          city: 'Paris',
+          zipCode: '75001',
+          country: 'France',
+        },
+        deliveryOption: 'express',
+        trackingUrl: 'https://example.com/track/ORD-003',
+      },
+    };
+
+    const order = orderData[orderId];
+    if (!order) {
+      return HttpResponse.json({ detail: 'Order not found.' }, { status: 404 });
+    }
+
+    return HttpResponse.json(order, { status: 200 });
   }),
 ];

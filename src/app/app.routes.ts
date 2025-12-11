@@ -12,6 +12,9 @@ import { ProductRatingPageComponent } from './pages/product-rating-page.componen
 import { ProductDetailsPageComponent } from './pages/product-details-page.component';
 import { CartPageComponent } from './pages/cart-page.component';
 import { CheckoutPageComponent } from './pages/checkout-page.component';
+import { AccountProfileComponent } from './pages/account/account-profile.component';
+import { AccountOrdersComponent } from './pages/account/account-orders.component';
+import { AccountOrderDetailsComponent } from './pages/account/account-order-details.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent, pathMatch: 'full' },
@@ -25,6 +28,15 @@ export const routes: Routes = [
       { path: 'rating', component: ProductRatingPageComponent },
       { path: 'cart', component: CartPageComponent },
       { path: 'checkout', component: CheckoutPageComponent },
+    ],
+  },
+  {
+    path: 'account',
+    canActivate: [authGuard],
+    children: [
+      { path: 'profile', component: AccountProfileComponent },
+      { path: 'orders', component: AccountOrdersComponent },
+      { path: 'orders/:id', component: AccountOrderDetailsComponent },
     ],
   },
   { path: 'dev', component: DevIndexComponent },

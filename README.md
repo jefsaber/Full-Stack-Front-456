@@ -37,10 +37,18 @@ A modern e-commerce frontend built with Angular 20 and NgRx. It's fully function
    - Automatic redirect after login
    - Protected routes for authenticated users only
 
-6. **Additional Production Features**
+6. **Account Management Dashboard**
+   - View your profile with personal information
+   - Manage subscription preferences (newsletter)
+   - Set default product rating filter
+   - View complete order history
+   - Access detailed information for any past order
+   - See cost breakdown including taxes and shipping
+
+7. **Additional Production Features**
    - Loading animations while data fetches
    - Error handling and user feedback
-   - Toast notifications for cart actions
+   - Toast notifications for cart actions and preference updates
    - Form validation with helpful error messages
    - Responsive design for all screen sizes
    - Dark theme throughout the app
@@ -109,6 +117,14 @@ Each product shows:
 - Product buttons change from "Add" to "Remove" when items are in your cart
 - Price calculations update instantly as you change quantities
 
+### Account Management
+
+Once you're logged in, you can access your account from the navbar:
+
+- **Profile Page**: See your personal information, manage newsletter subscription, and set your preferred minimum product rating
+- **Orders Page**: Browse all your past orders with their status and total amount
+- **Order Details**: Click on any order to see the complete breakdown including items, delivery address, taxes, shipping, and total cost
+
 ---
 
 ## Project Structure
@@ -122,6 +138,10 @@ src/app/
 │   ├── cart-page.component.ts
 │   ├── product-rating-page.component.ts
 │   ├── checkout-page.component.ts
+│   ├── account/
+│   │   ├── account-profile.component.ts
+│   │   ├── account-orders.component.ts
+│   │   └── account-order-details.component.ts
 │   └── checkout/
 │       ├── step1-summary.component.ts
 │       ├── step2-address.component.ts
@@ -129,7 +149,12 @@ src/app/
 ├── state/
 │   ├── auth/
 │   ├── products/
-│   └── cart/
+│   ├── cart/
+│   └── user/
+│       ├── user.actions.ts
+│       ├── user.reducer.ts
+│       ├── user.selectors.ts
+│       └── user.effects.ts
 ├── components/
 │   ├── login-form/
 │   ├── product-card/
@@ -146,15 +171,18 @@ src/app/
 
 ## Available Routes
 
-| Path                 | What You'll Find                   |
-| -------------------- | ---------------------------------- |
-| `/login`             | Login page - enter any credentials |
-| `/app`               | Home page with navigation options  |
-| `/shop/products`     | Browse all products with filters   |
-| `/shop/products/:id` | Detailed view of a single product  |
-| `/shop/cart`         | Your shopping cart                 |
-| `/shop/checkout`     | Multi-step checkout process        |
-| `/shop/rating`       | Check product ratings              |
+| Path                  | What You'll Find                   |
+| --------------------- | ---------------------------------- |
+| `/login`              | Login page - enter any credentials |
+| `/app`                | Home page with navigation options  |
+| `/shop/products`      | Browse all products with filters   |
+| `/shop/products/:id`  | Detailed view of a single product  |
+| `/shop/cart`          | Your shopping cart                 |
+| `/shop/checkout`      | Multi-step checkout process        |
+| `/shop/rating`        | Check product ratings              |
+| `/account/profile`    | Your profile and preferences       |
+| `/account/orders`     | Your order history                 |
+| `/account/orders/:id` | Detailed view of a specific order  |
 
 ---
 
@@ -172,6 +200,19 @@ src/app/
 - Otherwise, shipping costs 5.99 euros
 - Tax is calculated at 19% of the subtotal
 - Express delivery costs an extra 9.99 euros
+
+---
+
+## How Account Management Works
+
+Your account information is managed with the same modern state system as the shopping cart:
+
+- **Profile Data**: Your username, email, full name, and default address are loaded when you visit your profile
+- **Preferences**: Newsletter subscription and product rating preferences are stored and can be updated instantly
+- **Order History**: All your past orders are displayed with their current status
+- **Order Details**: Each order shows the complete breakdown including items purchased, delivery address, cost summary, and tracking information
+
+The system uses NgRx to manage all account data, keeping everything in sync across the application.
 
 ---
 
@@ -193,6 +234,10 @@ src/app/
 3. Fill in the checkout form - you'll see validation messages for any errors
 4. Complete an order and watch the cart clear
 5. Click the cart icon to see your item count update instantly
+6. Log in and navigate to "Mon Compte" to view your profile
+7. Update your newsletter subscription and see the confirmation message
+8. Visit your orders page to see the order history
+9. Click on any order to see the complete details and cost breakdown
 
 ---
 

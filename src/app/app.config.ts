@@ -13,9 +13,11 @@ import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { authReducer } from './state/auth/auth.reducer';
 import { productsReducer } from './state/products/products.reducer';
 import { cartReducer } from './state/cart/cart.reducer';
+import { userReducer } from './state/user/user.reducer';
 import { AuthEffects } from './state/auth/auth.effects';
 import { ProductsEffects } from './state/products/products.effects';
 import { CartEffects } from './state/cart/cart.effects';
+import { UserEffects } from './state/user/user.effects';
 import { authInterceptor } from './services/auth.interceptor';
 import { StorageService } from './services/storage.service';
 
@@ -25,8 +27,8 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor])),
-    provideStore({ auth: authReducer, products: productsReducer, cart: cartReducer }),
-    provideEffects([AuthEffects, ProductsEffects, CartEffects]),
+    provideStore({ auth: authReducer, products: productsReducer, cart: cartReducer, user: userReducer }),
+    provideEffects([AuthEffects, ProductsEffects, CartEffects, UserEffects]),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
     StorageService, // Initialize on app startup
   ],
