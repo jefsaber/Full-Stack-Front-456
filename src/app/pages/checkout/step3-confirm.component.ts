@@ -13,6 +13,7 @@ import { Observable, combineLatest } from 'rxjs';
 import { CartItem } from '../../state/cart/cart.actions';
 import * as CartActions from '../../state/cart/cart.actions';
 import { OrdersStorageService } from '../../services/orders-storage.service';
+import { OrderDetail } from '../../state/user/user.actions';
 import * as UserActions from '../../state/user/user.actions';
 import { take } from 'rxjs/operators';
 
@@ -85,14 +86,18 @@ interface OrderConfirmation {
           <!-- Items Summary -->
           <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 mb-6 text-left">
             <h3 class="font-bold text-white mb-4">Order Items</h3>
-            <div class="space-y-2">
-              @for (item of items$ | async; track item.id) {
-                <div class="flex justify-between text-gray-300">
-                  <span>{{ item.name }} (x{{ item.quantity }})</span>
-                  <span>€{{ (item.price * item.quantity).toFixed(2) }}</span>
-                </div>
-              }
-            </div>
+            @if (confirmedItems.length > 0) {
+              <div class="space-y-2">
+                @for (item of confirmedItems; track item.productId) {
+                  <div class="flex justify-between text-gray-300">
+                    <span>{{ item.productName }} (x{{ item.quantity }})</span>
+                    <span>€{{ (item.price * item.quantity).toFixed(2) }}</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="text-gray-500">No items were recorded for this order.</p>
+            }
           </div>
 
           <!-- Next Steps -->
@@ -215,6 +220,7 @@ export class CheckoutConfirmComponent implements OnInit {
   orderConfirmation: OrderConfirmation | null = null;
   termsAccepted = false;
   placing = false;
+  confirmedItems: OrderDetail['items'] = [];
 
   constructor(
     private store: Store,
@@ -266,6 +272,7 @@ export class CheckoutConfirmComponent implements OnInit {
           delivery_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
           tracking_url: savedOrder.trackingUrl || '',
         };
+        this.confirmedItems = savedOrder.items || [];
 
         this.placing = false;
 

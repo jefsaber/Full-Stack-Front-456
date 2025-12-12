@@ -1,8 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -18,13 +17,18 @@ import {
   selectAllProducts,
   selectProductsLoading,
   selectProductsError,
+  selectProductsCount,
 } from '../state/products/products.selectors';
 import { selectCartItems } from '../state/cart/cart.selectors';
 import { selectIsAuthenticated } from '../state/auth/auth.selectors';
 import * as AuthActions from '../state/auth/auth.actions';
-import { Observable } from 'rxjs';
+import * as WishlistActions from '../state/wishlist/wishlist.actions';
+import { selectIsProductInWishlist } from '../state/wishlist/wishlist.selectors';
+import { Observable, Subject } from 'rxjs';
 import { SkeletonLoaderComponent } from '../components/skeleton-loader/skeleton-loader.component';
 import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
+import { WishlistIconComponent } from '../components/wishlist-icon/wishlist-icon.component';
+import { takeUntil } from 'rxjs/operators';
 
 export interface Product {
   id: number;
@@ -41,7 +45,6 @@ export interface Product {
     CommonModule,
     RouterLink,
     ReactiveFormsModule,
-    MatPaginatorModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -52,6 +55,7 @@ export interface Product {
     MatIconModule,
     SkeletonLoaderComponent,
     CartIconComponent,
+    WishlistIconComponent,
   ],
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -114,8 +118,9 @@ export interface Product {
           
             <!-- Auth Section -->
             <div class="flex items-center gap-4">
-              <!-- Cart Icon -->
+              <!-- Cart + Wishlist Icons -->
               <app-cart-icon></app-cart-icon>
+              <app-wishlist-icon></app-wishlist-icon>
 
               @if (isAuthenticated$ | async) {
                 <div class="flex items-center gap-3 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">
@@ -149,7 +154,6 @@ export interface Product {
         <!-- Background Gradient Blobs -->
         <div class="absolute -top-40 -left-40 w-80 h-80 bg-linear-to-br from-blue-600/20 to-transparent rounded-full blur-3xl"></div>
         <div class="absolute -bottom-40 -right-40 w-80 h-80 bg-linear-to-tl from-purple-600/20 to-transparent rounded-full blur-3xl"></div>
-
         <div class="mx-auto max-w-7xl relative z-10">
         <!-- Sticky Header -->
         <div class="sticky top-0 z-20 mb-8 bg-slate-900/80 backdrop-blur-md border-b border-white/10 -mx-6 px-6 py-4 rounded-b-2xl">
@@ -260,6 +264,25 @@ export interface Product {
                       </button>
                     }
                   </div>
+                  <div class="pt-2">
+                    @if (isProductInWishlist(product.id) | async) {
+                      <button
+                        type="button"
+                        (click)="removeFromWishlist(product.id)"
+                        class="w-full bg-linear-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white py-2 px-3 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2"
+                      >
+                        💖 Already in wishlist
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        (click)="addToWishlist(product.id)"
+                        class="w-full bg-white/10 border border-pink-500/30 hover:border-pink-400 hover:bg-pink-500/10 text-pink-200 py-2 px-3 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2"
+                      >
+                        🤍 Save for later
+                      </button>
+                    }
+                  </div>
                 </div>
               </div>
             } @empty {
@@ -271,13 +294,33 @@ export interface Product {
           </div>
 
           <!-- Pagination -->
-          <div class="flex justify-center bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4">
-            <mat-paginator
-              [length]="totalProducts"
-              [pageSize]="pageSize"
-              [pageSizeOptions]="pageSizeOptions"
-              (page)="onPageChange($event)"
-            ></mat-paginator>
+          <div class="mt-6 flex flex-wrap justify-center gap-2">
+            <button
+              type="button"
+              (click)="setPage(currentPage - 1)"
+              [disabled]="currentPage === 0"
+              class="pagination-button"
+            >
+              ← Prev
+            </button>
+            <ng-container *ngFor="let page of pageRange">
+              <button
+                type="button"
+                (click)="setPage(page)"
+                [class.active]="page === currentPage"
+                class="pagination-button"
+              >
+                {{ page + 1 }}
+              </button>
+            </ng-container>
+            <button
+              type="button"
+              (click)="setPage(currentPage + 1)"
+              [disabled]="currentPage >= totalPages - 1"
+              class="pagination-button"
+            >
+              Next →
+            </button>
           </div>
         }
       </div>
@@ -302,9 +345,35 @@ export interface Product {
     ::ng-deep .animate-fadeIn {
       animation: fadeIn 0.3s ease-out;
     }
+
+    .pagination-button {
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      color: #f8fafc;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .pagination-button:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.18);
+      transform: translateY(-1px);
+    }
+
+    .pagination-button.active {
+      border-color: transparent;
+      background: linear-gradient(135deg, #34d399, #06b6d4);
+      color: #111827;
+    }
+
+    .pagination-button:disabled {
+      opacity: 0.4;
+    }
   `],
 })
-export class ProductsPageComponent implements OnInit {
+export class ProductsPageComponent implements OnInit, OnDestroy {
   filterForm: FormGroup;
   products$: Observable<Product[]>;
   loading$: Observable<boolean>;
@@ -313,9 +382,11 @@ export class ProductsPageComponent implements OnInit {
   isAuthenticated$: any;
   
   pageSize = 6;
-  pageSizeOptions = [3, 6, 12, 20];
   currentPage = 0;
-  totalProducts = 20; // Total products in mock data
+  totalProducts = 0;
+  totalPages = 0;
+  pageRange: number[] = [];
+  private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -335,6 +406,18 @@ export class ProductsPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.store
+      .select(selectProductsCount)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((count) => {
+        this.totalProducts = count;
+        this.totalPages = Math.max(1, Math.ceil(count / this.pageSize));
+        if (this.currentPage >= this.totalPages) {
+          this.currentPage = this.totalPages - 1;
+        }
+        this.updatePageRange();
+      });
+
     this.applyFilters();
   }
 
@@ -344,29 +427,44 @@ export class ProductsPageComponent implements OnInit {
 
   applyFilters(): void {
     this.currentPage = 0; // Reset to first page when filters change
+    this.updatePageRange();
+    this.fetchProducts();
+  }
+
+  setPage(pageIndex: number): void {
+    if (pageIndex < 0 || pageIndex >= this.totalPages || pageIndex === this.currentPage) {
+      return;
+    }
+
+    this.currentPage = pageIndex;
+    this.updatePageRange();
+    this.fetchProducts();
+  }
+
+  private fetchProducts(): void {
     const filters = {
-      page: this.currentPage,
+      page: this.currentPage + 1,
       pageSize: this.pageSize,
       minRating: this.filterForm.get('minRating')?.value || 0,
       ordering: this.filterForm.get('ordering')?.value || '',
     };
 
-    // Optimistic UI: Dispatch action immediately
     this.store.dispatch(ProductsActions.loadProducts({ filters }));
   }
 
-  onPageChange(event: PageEvent): void {
-    this.currentPage = event.pageIndex;
-    this.pageSize = event.pageSize;
+  private updatePageRange(): void {
+    const maxVisible = 5;
+    const totalPages = Math.max(1, this.totalPages);
+    let start = Math.max(0, this.currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPages - 1, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible && totalPages >= maxVisible) {
+      start = Math.max(0, end - maxVisible + 1);
+    }
 
-    const filters = {
-      page: this.currentPage,
-      pageSize: this.pageSize,
-      minRating: this.filterForm.get('minRating')?.value || 0,
-      ordering: this.filterForm.get('ordering')?.value || '',
-    };
-
-    this.store.dispatch(ProductsActions.loadProducts({ filters }));
+    this.pageRange = [];
+    for (let i = start; i <= end; i += 1) {
+      this.pageRange.push(i);
+    }
   }
 
   isProductInCart(productId: number): Observable<boolean> {
@@ -376,6 +474,10 @@ export class ProductsPageComponent implements OnInit {
         observer.next(isInCart);
       });
     });
+  }
+
+  isProductInWishlist(productId: number): Observable<boolean> {
+    return this.store.select(selectIsProductInWishlist(productId));
   }
 
   addToCart(product: Product): void {
@@ -398,6 +500,27 @@ export class ProductsPageComponent implements OnInit {
       'Close',
       { duration: 2000, panelClass: ['success-snackbar'] }
     );
+  }
+
+  addToWishlist(productId: number): void {
+    this.store.dispatch(WishlistActions.addToWishlist({ productId }));
+    this.snackBar.open(`💖 Product saved to wishlist`, 'Close', {
+      duration: 2000,
+      panelClass: ['success-snackbar'],
+    });
+  }
+
+  removeFromWishlist(productId: number): void {
+    this.store.dispatch(WishlistActions.removeFromWishlist({ productId }));
+    this.snackBar.open(`💔 Product removed from wishlist`, 'Close', {
+      duration: 2000,
+      panelClass: ['success-snackbar'],
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
 

@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
@@ -10,11 +10,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { selectIsAuthenticated } from '../state/auth/auth.selectors';
 import * as AuthActions from '../state/auth/auth.actions';
 import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
+import { WishlistIconComponent } from '../components/wishlist-icon/wishlist-icon.component';
 
 @Component({
   standalone: true,
   selector: 'app-checkout-page',
-  imports: [CommonModule, CheckoutSummaryComponent, CheckoutAddressComponent, CheckoutConfirmComponent, RouterLink, MatButtonModule, MatIconModule, CartIconComponent],
+  imports: [CommonModule, CheckoutSummaryComponent, CheckoutAddressComponent, CheckoutConfirmComponent, RouterLink, MatButtonModule, MatIconModule, CartIconComponent, WishlistIconComponent],
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <!-- Navbar -->
@@ -78,6 +79,7 @@ import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
             <div class="flex items-center gap-4">
               <!-- Cart Icon -->
               <app-cart-icon></app-cart-icon>
+              <app-wishlist-icon></app-wishlist-icon>
 
               @if (isAuthenticated$ | async) {
                 <div class="flex items-center gap-3 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">
@@ -127,14 +129,13 @@ import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
             }
             @case (2) {
               <app-checkout-address
-                (nextStep)="goToStep(3)"
-                #addressComponent
+                (nextStep)="onAddressNext($event)"
                 (previousStep)="goToStep(1)"
               ></app-checkout-address>
             }
             @case (3) {
               <app-checkout-confirm
-                [addressData]="getAddressData()"
+                [addressData]="addressData"
                 (previousStep)="goToStep(2)"
               ></app-checkout-confirm>
             }
@@ -150,10 +151,10 @@ import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
   `]
 })
 export class CheckoutPageComponent {
-  @ViewChild(CheckoutAddressComponent) addressComponent?: CheckoutAddressComponent;
   isAuthenticated$: any;
 
   currentStep = 1;
+  addressData: any | null = null;
 
   constructor(private store: Store) {
     this.isAuthenticated$ = this.store.select(selectIsAuthenticated);
@@ -164,8 +165,9 @@ export class CheckoutPageComponent {
     window.scrollTo(0, 0);
   }
 
-  getAddressData(): any {
-    return this.addressComponent?.addressForm.value || null;
+  onAddressNext(addressPayload: any): void {
+    this.addressData = addressPayload;
+    this.goToStep(3);
   }
 
   logout(): void {

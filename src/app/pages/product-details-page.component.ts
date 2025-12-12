@@ -13,7 +13,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { selectIsAuthenticated } from '../state/auth/auth.selectors';
 import * as AuthActions from '../state/auth/auth.actions';
+import * as WishlistActions from '../state/wishlist/wishlist.actions';
+import { selectIsProductInWishlist } from '../state/wishlist/wishlist.selectors';
 import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
+import { WishlistIconComponent } from '../components/wishlist-icon/wishlist-icon.component';
 
 interface Product {
   id: number;
@@ -29,7 +32,7 @@ interface Product {
 @Component({
   standalone: true,
   selector: 'app-product-details',
-  imports: [CommonModule, RouterLink, MatSnackBarModule, MatButtonModule, MatIconModule, CartIconComponent],
+  imports: [CommonModule, RouterLink, MatSnackBarModule, MatButtonModule, MatIconModule, CartIconComponent, WishlistIconComponent],
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <!-- Navbar -->
@@ -93,6 +96,7 @@ interface Product {
             <div class="flex items-center gap-4">
               <!-- Cart Icon -->
               <app-cart-icon></app-cart-icon>
+              <app-wishlist-icon></app-wishlist-icon>
 
               @if (isAuthenticated$ | async) {
                 <div class="flex items-center gap-3 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">
@@ -258,6 +262,26 @@ interface Product {
                 }
               </div>
 
+              <div class="pt-4">
+                @if (isProductInWishlist(product.id) | async) {
+                  <button
+                    type="button"
+                    (click)="removeFromWishlist(product)"
+                    class="w-full bg-linear-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white py-3 px-4 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2"
+                  >
+                    💖 Remove from wishlist
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    (click)="addToWishlist(product)"
+                    class="w-full bg-white/10 border border-pink-500/30 hover:border-pink-400 hover:bg-pink-500/10 text-pink-200 py-3 px-4 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2"
+                  >
+                    🤍 Save for later
+                  </button>
+                }
+              </div>
+
               <!-- Additional Info -->
               <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 text-sm text-gray-300">
                 <p>✓ Free shipping on orders over €50</p>
@@ -377,6 +401,10 @@ export class ProductDetailsPageComponent implements OnInit, OnDestroy {
     );
   }
 
+  isProductInWishlist(productId: number): Observable<boolean> {
+    return this.store.select(selectIsProductInWishlist(productId));
+  }
+
   removeFromCart(product: Product): void {
     this.store.dispatch(CartActions.removeItem({ productId: product.id }));
 
@@ -385,5 +413,21 @@ export class ProductDetailsPageComponent implements OnInit, OnDestroy {
       'Close',
       { duration: 2000, panelClass: ['success-snackbar'] }
     );
+  }
+
+  addToWishlist(product: Product): void {
+    this.store.dispatch(WishlistActions.addToWishlist({ productId: product.id }));
+    this.snackBar.open(`💖 Saved ${product.name} to wishlist`, 'Close', {
+      duration: 2000,
+      panelClass: ['success-snackbar'],
+    });
+  }
+
+  removeFromWishlist(product: Product): void {
+    this.store.dispatch(WishlistActions.removeFromWishlist({ productId: product.id }));
+    this.snackBar.open(`💔 Removed ${product.name} from wishlist`, 'Close', {
+      duration: 2000,
+      panelClass: ['success-snackbar'],
+    });
   }
 }

@@ -20,6 +20,7 @@ import * as AuthActions from '../state/auth/auth.actions';
 import { Observable } from 'rxjs';
 import { SkeletonLoaderComponent } from '../components/skeleton-loader/skeleton-loader.component';
 import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
+import { WishlistIconComponent } from '../components/wishlist-icon/wishlist-icon.component';
 
 export interface ProductRating {
   product_id: number;
@@ -42,6 +43,7 @@ export interface ProductRating {
     MatProgressSpinnerModule,
     SkeletonLoaderComponent,
     CartIconComponent,
+    WishlistIconComponent,
   ],
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -106,6 +108,7 @@ export interface ProductRating {
             <div class="flex items-center gap-4">
               <!-- Cart Icon -->
               <app-cart-icon></app-cart-icon>
+              <app-wishlist-icon></app-wishlist-icon>
 
               @if (isAuthenticated$ | async) {
                 <div class="flex items-center gap-3 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">

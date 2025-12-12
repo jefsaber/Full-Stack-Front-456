@@ -13,6 +13,11 @@ export interface Product {
   price: number;
   created_at: string;
   avgRating: number;
+  description: string;
+  stock: number;
+  reviews_count: number;
+  owner_id: number;
+  ratings: { user_id: number; value: number }[];
 }
 
 export const loadProducts = createAction(

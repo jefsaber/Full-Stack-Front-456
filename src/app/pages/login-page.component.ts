@@ -13,6 +13,7 @@ import { Subject } from 'rxjs';
 import { takeUntil, filter } from 'rxjs/operators';
 import * as AuthActionsLogout from '../state/auth/auth.actions';
 import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
+import { WishlistIconComponent } from '../components/wishlist-icon/wishlist-icon.component';
 
 @Component({
   standalone: true,
@@ -26,6 +27,7 @@ import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
     MatIconModule,
     MatProgressSpinnerModule,
     CartIconComponent,
+    WishlistIconComponent,
   ],
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -90,6 +92,7 @@ import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
             <div class="flex items-center gap-4">
               <!-- Cart Icon -->
               <app-cart-icon></app-cart-icon>
+              <app-wishlist-icon></app-wishlist-icon>
 
               @if (isAuthenticated$ | async) {
                 <div class="flex items-center gap-3 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">
@@ -195,6 +198,7 @@ export class LoginPageComponent implements OnInit, OnDestroy {
   error$: any;
   isAuthenticated$: any;
   private destroy$ = new Subject<void>();
+  private returnUrl = '/shop/products';
 
   constructor(
     private store: Store,
@@ -207,6 +211,10 @@ export class LoginPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    const requested = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (requested) {
+      this.returnUrl = requested;
+    }
     // Listen for authentication success and navigate
     this.store
       .select(selectAccessToken)
@@ -216,7 +224,7 @@ export class LoginPageComponent implements OnInit, OnDestroy {
       )
       .subscribe((token) => {
         // Navigate to /app after successful login
-        this.router.navigate(['/app']);
+        this.router.navigateByUrl(this.returnUrl);
       });
   }
 

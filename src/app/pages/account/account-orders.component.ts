@@ -11,11 +11,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { selectIsAuthenticated } from '../../state/auth/auth.selectors';
 import * as AuthActions from '../../state/auth/auth.actions';
 import { CartIconComponent } from '../../components/cart-icon/cart-icon.component';
+import { WishlistIconComponent } from '../../components/wishlist-icon/wishlist-icon.component';
 
 @Component({
   selector: 'app-account-orders',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatButtonModule, MatIconModule, CartIconComponent],
+  imports: [CommonModule, RouterLink, MatButtonModule, MatIconModule, CartIconComponent, WishlistIconComponent],
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <!-- Navbar -->
@@ -79,6 +80,7 @@ import { CartIconComponent } from '../../components/cart-icon/cart-icon.componen
             <div class="flex items-center gap-4">
               <!-- Cart Icon -->
               <app-cart-icon></app-cart-icon>
+              <app-wishlist-icon></app-wishlist-icon>
 
               @if (isAuthenticated$ | async) {
                 <div class="flex items-center gap-3 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">

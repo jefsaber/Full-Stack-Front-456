@@ -14,11 +14,12 @@ import { selectIsAuthenticated } from '../state/auth/auth.selectors';
 import * as AuthActions from '../state/auth/auth.actions';
 import { MatButtonModule } from '@angular/material/button';
 import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
+import { WishlistIconComponent } from '../components/wishlist-icon/wishlist-icon.component';
 
 @Component({
   standalone: true,
   selector: 'app-cart-page',
-  imports: [CommonModule, RouterLink, MatButtonModule, CartIconComponent],
+  imports: [CommonModule, RouterLink, MatButtonModule, CartIconComponent, WishlistIconComponent],
   template: `
     <div class="min-h-screen bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 p-6 relative overflow-hidden">
       <nav class="backdrop-blur-md bg-white/10 border-b border-white/20 sticky top-0 z-50">
@@ -49,6 +50,7 @@ import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
             </div>
             <div class="flex items-center gap-4">
               <app-cart-icon></app-cart-icon>
+              <app-wishlist-icon></app-wishlist-icon>
 
               @if (isAuthenticated$ | async) {
                 <div class="flex items-center gap-3 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">

@@ -12,6 +12,7 @@ import { ProductRatingPageComponent } from './pages/product-rating-page.componen
 import { ProductDetailsPageComponent } from './pages/product-details-page.component';
 import { CartPageComponent } from './pages/cart-page.component';
 import { CheckoutPageComponent } from './pages/checkout-page.component';
+import { WishlistPageComponent } from './pages/wishlist-page.component';
 import { AccountProfileComponent } from './pages/account/account-profile.component';
 import { AccountOrdersComponent } from './pages/account/account-orders.component';
 import { AccountOrderDetailsComponent } from './pages/account/account-order-details.component';
@@ -27,6 +28,7 @@ export const routes: Routes = [
       { path: 'products/:id', component: ProductDetailsPageComponent },
       { path: 'rating', component: ProductRatingPageComponent },
       { path: 'cart', component: CartPageComponent },
+      { path: 'wishlist', component: WishlistPageComponent },
       { path: 'checkout', component: CheckoutPageComponent },
     ],
   },

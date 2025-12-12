@@ -213,7 +213,7 @@ import { Observable } from 'rxjs';
   styles: [],
 })
 export class CheckoutAddressComponent {
-  @Output() nextStep = new EventEmitter<void>();
+  @Output() nextStep = new EventEmitter<any>();
   @Output() previousStep = new EventEmitter<void>();
 
   addressForm: FormGroup;
@@ -244,7 +244,7 @@ export class CheckoutAddressComponent {
 
   onNextStep(): void {
     if (this.addressForm.valid) {
-      this.nextStep.emit();
+      this.nextStep.emit(this.addressForm.value);
     } else {
       alert('Please fill in all required fields');
     }
