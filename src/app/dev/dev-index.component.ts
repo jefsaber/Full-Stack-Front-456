@@ -87,6 +87,22 @@ import { MatCardModule } from '@angular/material/card';
               </span>
             </div>
           </div>
+
+          <!-- Orders Endpoint -->
+          <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/20 border border-orange-500/50 p-8 hover:border-orange-400/80 hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-300 cursor-pointer" routerLink="/dev/orders">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-orange-500/10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-300"></div>
+            <div class="relative z-10">
+              <div class="w-12 h-12 bg-orange-500/30 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-orange-500/50 transition">
+                <span class="text-xl">🧾</span>
+              </div>
+              <h3 class="text-2xl font-bold text-white mb-2">Orders</h3>
+              <p class="text-orange-200 mb-4 text-sm">GET /api/me/orders/ & GET /api/orders/:id/</p>
+              <p class="text-orange-100 text-sm">Inspect order lists & details</p>
+              <span class="inline-flex items-center text-orange-300 font-semibold group-hover:gap-2 transition-all gap-1 mt-4">
+                Open <span class="text-lg">→</span>
+              </span>
+            </div>
+          </div>
         </div>
 
         <!-- Info Section -->

@@ -5,6 +5,7 @@ import { DevIndexComponent } from './dev/dev-index.component';
 import { DevAuthComponent } from './dev/dev-auth.component';
 import { DevProductsComponent } from './dev/dev-products.component';
 import { DevProductRatingComponent } from './dev/dev-product-rating.component';
+import { DevOrdersComponent } from './dev/dev-orders.component';
 import { AppPlaceholderComponent } from './app-placeholder.component';
 import { LoginPageComponent } from './pages/login-page.component';
 import { ProductsPageComponent } from './pages/products-page.component';
@@ -45,6 +46,7 @@ export const routes: Routes = [
   { path: 'dev/auth', component: DevAuthComponent },
   { path: 'dev/products', component: DevProductsComponent },
   { path: 'dev/products/:id/rating', component: DevProductRatingComponent },
+  { path: 'dev/orders', component: DevOrdersComponent },
   { path: 'app', component: AppPlaceholderComponent },
   { path: '**', redirectTo: '' },
 ];
