@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import * as CartActions from '../state/cart/cart.actions';
 import {
@@ -11,13 +10,73 @@ import {
 } from '../state/cart/cart.selectors';
 import { Observable } from 'rxjs';
 import { CartItem } from '../state/cart/cart.actions';
+import { selectIsAuthenticated } from '../state/auth/auth.selectors';
+import * as AuthActions from '../state/auth/auth.actions';
+import { MatButtonModule } from '@angular/material/button';
+import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
 
 @Component({
   standalone: true,
   selector: 'app-cart-page',
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, MatButtonModule, CartIconComponent],
   template: `
     <div class="min-h-screen bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 p-6 relative overflow-hidden">
+      <nav class="backdrop-blur-md bg-white/10 border-b border-white/20 sticky top-0 z-50">
+        <div class="mx-auto max-w-7xl px-6 py-4">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-linear-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                <span class="text-white font-bold text-lg">🛍️</span>
+              </div>
+              <h1 class="text-2xl font-bold text-white">My Shop</h1>
+            </div>
+            <div class="hidden md:flex items-center gap-6">
+              <button type="button" mat-button routerLink="/" class="text-gray-200 hover:text-white transition font-medium">
+                Home
+              </button>
+              <button type="button" mat-button routerLink="/shop/products" class="text-gray-200 hover:text-white transition font-medium">
+                Products
+              </button>
+              <button type="button" mat-button routerLink="/shop/rating" class="text-gray-200 hover:text-white transition font-medium">
+                Ratings
+              </button>
+              <button type="button" mat-button *ngIf="isAuthenticated$ | async" routerLink="/account/profile" class="text-gray-200 hover:text-white transition font-medium">
+                Mon Compte
+              </button>
+              <button type="button" mat-button routerLink="/dev" class="text-gray-200 hover:text-white transition font-medium">
+                Dev
+              </button>
+            </div>
+            <div class="flex items-center gap-4">
+              <app-cart-icon></app-cart-icon>
+
+              @if (isAuthenticated$ | async) {
+                <div class="flex items-center gap-3 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">
+                  <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  <span class="text-green-200 font-medium text-sm">Authenticated</span>
+                </div>
+                <button
+                  type="button"
+                  mat-button
+                  (click)="logout()"
+                  class="text-red-300 hover:text-red-100 transition"
+                >
+                  Logout
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  mat-raised-button
+                  routerLink="/login"
+                  class="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  Sign In
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </nav>
       <!-- Background Gradient Blobs -->
       <div class="absolute -top-40 -left-40 w-80 h-80 bg-linear-to-br from-blue-600/20 to-transparent rounded-full blur-3xl"></div>
       <div class="absolute -bottom-40 -right-40 w-80 h-80 bg-linear-to-tl from-purple-600/20 to-transparent rounded-full blur-3xl"></div>
@@ -163,11 +222,17 @@ export class CartPageComponent {
   items$: Observable<CartItem[]>;
   cartTotal$: Observable<number>;
   cartEmpty$: Observable<boolean>;
+  isAuthenticated$: Observable<boolean>;
 
   constructor(private store: Store) {
     this.items$ = this.store.select(selectCartItems);
     this.cartTotal$ = this.store.select(selectCartTotal);
     this.cartEmpty$ = this.store.select(selectCartEmpty);
+    this.isAuthenticated$ = this.store.select(selectIsAuthenticated);
+  }
+
+  logout(): void {
+    this.store.dispatch(AuthActions.logout());
   }
 
   increaseQuantity(productId: number, currentQuantity: number): void {

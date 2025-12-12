@@ -8,7 +8,8 @@ import { Store } from '@ngrx/store';
 import * as UserActions from '../../state/user/user.actions';
 import * as UserSelectors from '../../state/user/user.selectors';
 import { Observable } from 'rxjs';
-import { User, UserPreferences } from '../../state/user/user.actions';
+import { UserPreferences } from '../../state/user/user.actions';
+import { OrderStats } from '../../state/user/user.selectors';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -208,23 +209,32 @@ import { CartIconComponent } from '../../components/cart-icon/cart-icon.componen
           <!-- Orders Summary -->
           <div class="space-y-4 border-t border-white/10 pt-6">
             <h2 class="text-xl font-semibold text-emerald-400">Résumé des Commandes</h2>
-            <div class="grid grid-cols-3 gap-4">
+            <div *ngIf="orderStats$ | async as stats" class="grid grid-cols-3 gap-4">
               <div class="bg-white/5 p-4 rounded-xl border border-white/10 text-center">
                 <p class="text-gray-400 text-sm">Total Commandes</p>
-                <p class="text-2xl font-bold text-emerald-400">{{ user.orders.length }}</p>
+                <p class="text-2xl font-bold text-emerald-400">{{ stats.count }}</p>
               </div>
               <div class="bg-white/5 p-4 rounded-xl border border-white/10 text-center">
                 <p class="text-gray-400 text-sm">Montant Total Dépensé</p>
                 <p class="text-2xl font-bold text-blue-400">
-                  {{ (getTotalSpent(user.orders) | number: '1.2-2') }}€
+                  {{ stats.totalSpent | number: '1.2-2' }}€
                 </p>
               </div>
               <div class="bg-white/5 p-4 rounded-xl border border-white/10 text-center">
                 <p class="text-gray-400 text-sm">Dernière Commande</p>
                 <p class="text-lg font-bold text-purple-400">
-                  {{ (getLastOrderDate(user.orders) | date: 'dd/MM/yy') || 'Aucune' }}
+                  {{ stats.lastOrderDate ? (stats.lastOrderDate | date: 'dd/MM/yy') : 'Aucune' }}
                 </p>
               </div>
+            </div>
+            <div class="text-center">
+              <a
+                routerLink="/account/orders"
+                class="inline-flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 bg-white/5 border border-white/20 rounded-full hover:bg-white/10 transition"
+              >
+                Voir toutes mes commandes
+                <span class="text-emerald-400">→</span>
+              </a>
             </div>
           </div>
         </div>
@@ -245,6 +255,7 @@ import { CartIconComponent } from '../../components/cart-icon/cart-icon.componen
 export class AccountProfileComponent implements OnInit {
   user$: Observable<any>;
   loading$: Observable<boolean>;
+  orderStats$: Observable<OrderStats>;
   preferencesForm: FormGroup;
   isAuthenticated$: any;
 
@@ -259,6 +270,7 @@ export class AccountProfileComponent implements OnInit {
       newsletter: [false],
       defaultMinRating: [0],
     });
+    this.orderStats$ = this.store.select(UserSelectors.selectUserOrderStats);
   }
 
   ngOnInit(): void {
@@ -286,12 +298,4 @@ export class AccountProfileComponent implements OnInit {
     }
   }
 
-  getTotalSpent(orders: any[]): number {
-    return orders.reduce((sum, order) => sum + order.total, 0);
-  }
-
-  getLastOrderDate(orders: any[]): string | null {
-    if (orders.length === 0) return null;
-    return orders[0].date;
-  }
 }

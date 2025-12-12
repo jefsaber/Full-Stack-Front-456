@@ -9,10 +9,12 @@ import {
   selectShippingCost,
   selectTotalWithShipping,
 } from '../../state/cart/cart.selectors';
-import { Observable } from 'rxjs';
+import { Observable, combineLatest } from 'rxjs';
 import { CartItem } from '../../state/cart/cart.actions';
 import * as CartActions from '../../state/cart/cart.actions';
 import { OrdersStorageService } from '../../services/orders-storage.service';
+import * as UserActions from '../../state/user/user.actions';
+import { take } from 'rxjs/operators';
 
 interface OrderConfirmation {
   order_number: string;
@@ -235,48 +237,45 @@ export class CheckoutConfirmComponent implements OnInit {
 
     this.placing = true;
 
-    // Subscribe to get actual values
-    const itemsSub = this.items$.subscribe((items) => {
-      const totalSub = this.totalWithShipping$.subscribe((total) => {
-        const shippingSub = this.shippingCost$.subscribe((shipping) => {
-          const subtotalSub = this.cartTotal$.subscribe((subtotal) => {
-            // Calculate tax (19%)
-            const tax = subtotal * 0.19;
+    combineLatest([
+      this.items$,
+      this.totalWithShipping$,
+      this.cartTotal$,
+      this.shippingCost$,
+    ])
+      .pipe(take(1))
+      .subscribe(([items, total, subtotal, shipping]) => {
+        const tax = Math.round(subtotal * 0.19 * 100) / 100;
 
-            const orderData = {
-              items: items,
-              total,
-              subtotal,
-              tax: Math.round(tax * 100) / 100,
-              shipping,
-              address: this.addressData,
-              deliveryOption: this.addressData?.deliveryOption || 'standard',
-            };
+        const orderData = {
+          items,
+          total,
+          subtotal,
+          tax,
+          shipping,
+          address: this.addressData,
+          deliveryOption: this.addressData?.deliveryOption || 'standard',
+        };
 
-            // Save order to storage
-            const savedOrder = this.ordersStorage.addOrder(orderData);
-            
-            this.orderConfirmation = {
-              order_number: `ORD-${savedOrder.id}`,
-              status: 'confirmed',
-              total: total,
-              delivery_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-              tracking_url: savedOrder.trackingUrl || '',
-            };
-            
-            this.placing = false;
+        const savedOrder = this.ordersStorage.addOrder(orderData);
 
-            // Clear cart after successful order
-            this.store.dispatch(CartActions.clearCart());
+        this.orderConfirmation = {
+          order_number: `ORD-${savedOrder.id}`,
+          status: 'confirmed',
+          total: total,
+          delivery_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+          tracking_url: savedOrder.trackingUrl || '',
+        };
 
-            // Unsubscribe all
-            subtotalSub.unsubscribe();
-            shippingSub.unsubscribe();
-            totalSub.unsubscribe();
-            itemsSub.unsubscribe();
-          });
-        });
+        this.placing = false;
+
+        this.store.dispatch(CartActions.clearCart());
+        this.store.dispatch(UserActions.addUserOrder({ order: savedOrder }));
+        if (savedOrder.deliveryAddress) {
+          this.store.dispatch(
+            UserActions.setUserDefaultAddress({ address: savedOrder.deliveryAddress })
+          );
+        }
       });
-    });
   }
 }

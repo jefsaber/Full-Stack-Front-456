@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatIconModule } from '@angular/material/icon';
 import { Store } from '@ngrx/store';
 import * as ProductsActions from '../state/products/products.actions';
 import * as CartActions from '../state/cart/cart.actions';
@@ -19,8 +20,11 @@ import {
   selectProductsError,
 } from '../state/products/products.selectors';
 import { selectCartItems } from '../state/cart/cart.selectors';
+import { selectIsAuthenticated } from '../state/auth/auth.selectors';
+import * as AuthActions from '../state/auth/auth.actions';
 import { Observable } from 'rxjs';
 import { SkeletonLoaderComponent } from '../components/skeleton-loader/skeleton-loader.component';
+import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
 
 export interface Product {
   id: number;
@@ -45,15 +49,108 @@ export interface Product {
     MatCardModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    MatIconModule,
     SkeletonLoaderComponent,
+    CartIconComponent,
   ],
   template: `
-    <div class="min-h-screen bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 p-6 relative overflow-hidden">
-      <!-- Background Gradient Blobs -->
-      <div class="absolute -top-40 -left-40 w-80 h-80 bg-linear-to-br from-blue-600/20 to-transparent rounded-full blur-3xl"></div>
-      <div class="absolute -bottom-40 -right-40 w-80 h-80 bg-linear-to-tl from-purple-600/20 to-transparent rounded-full blur-3xl"></div>
+    <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
+      <!-- Navbar -->
+      <nav class="backdrop-blur-md bg-white/10 border-b border-white/20 sticky top-0 z-50">
+        <div class="mx-auto max-w-7xl px-6 py-4">
+          <div class="flex justify-between items-center">
+            <!-- Logo -->
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-linear-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                <span class="text-white font-bold text-lg">🛍️</span>
+              </div>
+              <h1 class="text-2xl font-bold text-white">My Shop</h1>
+            </div>
 
-      <div class="mx-auto max-w-7xl relative z-10">
+            <!-- Navigation Links -->
+            <div class="hidden md:flex items-center gap-6">
+              <button 
+                type="button"
+                mat-button
+                routerLink="/"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Home
+              </button>
+              <button 
+                type="button"
+                mat-button
+                routerLink="/shop/products"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Products
+              </button>
+              <button 
+                type="button"
+                mat-button
+                routerLink="/shop/rating"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Ratings
+              </button>
+              <button 
+                type="button"
+                mat-button
+                *ngIf="isAuthenticated$ | async"
+                routerLink="/account/profile"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Mon Compte
+              </button>
+              <button 
+                type="button"
+                mat-button
+                routerLink="/dev"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Dev
+              </button>
+            </div>
+          
+            <!-- Auth Section -->
+            <div class="flex items-center gap-4">
+              <!-- Cart Icon -->
+              <app-cart-icon></app-cart-icon>
+
+              @if (isAuthenticated$ | async) {
+                <div class="flex items-center gap-3 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">
+                  <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  <span class="text-green-200 font-medium text-sm">Authenticated</span>
+                </div>
+                <button
+                  type="button"
+                  mat-button
+                  (click)="logout()"
+                  class="text-red-300 hover:text-red-100 transition"
+                >
+                  Logout
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  mat-raised-button
+                  routerLink="/login"
+                  class="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  Sign In
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div class="p-6 relative overflow-hidden">
+        <!-- Background Gradient Blobs -->
+        <div class="absolute -top-40 -left-40 w-80 h-80 bg-linear-to-br from-blue-600/20 to-transparent rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-40 -right-40 w-80 h-80 bg-linear-to-tl from-purple-600/20 to-transparent rounded-full blur-3xl"></div>
+
+        <div class="mx-auto max-w-7xl relative z-10">
         <!-- Sticky Header -->
         <div class="sticky top-0 z-20 mb-8 bg-slate-900/80 backdrop-blur-md border-b border-white/10 -mx-6 px-6 py-4 rounded-b-2xl">
           <div class="flex justify-between items-center">
@@ -187,6 +284,10 @@ export interface Product {
     </div>
   `,
   styles: [`
+    :host ::ng-deep .mat-mdc-button {
+      text-transform: none !important;
+    }
+
     @keyframes fadeIn {
       from {
         opacity: 0;
@@ -209,6 +310,7 @@ export class ProductsPageComponent implements OnInit {
   loading$: Observable<boolean>;
   error$: Observable<string | null>;
   cartItems$: Observable<any[]>;
+  isAuthenticated$: any;
   
   pageSize = 6;
   pageSizeOptions = [3, 6, 12, 20];
@@ -227,12 +329,17 @@ export class ProductsPageComponent implements OnInit {
 
     this.products$ = this.store.select(selectAllProducts);
     this.loading$ = this.store.select(selectProductsLoading);
+    this.isAuthenticated$ = this.store.select(selectIsAuthenticated);
     this.error$ = this.store.select(selectProductsError);
     this.cartItems$ = this.store.select(selectCartItems);
   }
 
   ngOnInit(): void {
     this.applyFilters();
+  }
+
+  logout(): void {
+    this.store.dispatch(AuthActions.logout());
   }
 
   applyFilters(): void {

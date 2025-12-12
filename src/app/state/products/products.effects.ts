@@ -22,8 +22,9 @@ export class ProductsEffects {
         // Calculate average rating and filter
         let rows = products.map((p: any) => ({
           ...p,
-          _avg: avgRating(p.ratings),
-        })).filter((p: any) => p._avg >= minRating);
+          avgRating: avgRating(p.ratings),
+          reviews_count: p.ratings.length,
+        })).filter((p: any) => p.avgRating >= minRating);
 
         // Sort
         const sign = ordering.startsWith('-') ? -1 : 1;

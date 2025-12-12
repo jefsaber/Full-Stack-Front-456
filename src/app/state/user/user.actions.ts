@@ -100,3 +100,13 @@ export const loadOrderDetailFailure = createAction(
   '[User] Load Order Detail Failure',
   props<{ error: string }>()
 );
+
+export const setUserDefaultAddress = createAction(
+  '[User] Set Default Address',
+  props<{ address: Address }>()
+);
+
+export const addUserOrder = createAction(
+  '[User] Add Order',
+  props<{ order: OrderDetail }>()
+);

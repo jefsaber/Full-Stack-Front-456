@@ -93,5 +93,35 @@ export const userReducer = createReducer(
     ...state,
     loading: false,
     error,
+  })),
+
+  // Add order after checkout
+  on(UserActions.addUserOrder, (state, { order }) => {
+    const orderSummary: OrderSummary = {
+      id: order.id,
+      date: order.date,
+      total: order.total,
+      status: order.status,
+      itemCount: order.itemCount,
+    };
+
+    return {
+      ...state,
+      orders: [...state.orders, orderSummary],
+      currentUser: state.currentUser
+        ? {
+            ...state.currentUser,
+            orders: [...state.currentUser.orders, orderSummary],
+          }
+        : null,
+    };
+  }),
+
+  // Update default address when the user places a new order
+  on(UserActions.setUserDefaultAddress, (state, { address }) => ({
+    ...state,
+    currentUser: state.currentUser
+      ? { ...state.currentUser, defaultAddress: address }
+      : null,
   }))
 );

@@ -4,12 +4,15 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { LoginFormComponent } from '../components/login-form/login-form.component';
 import * as AuthActions from '../state/auth/auth.actions';
-import { selectAuthLoading, selectAuthError, selectAccessToken } from '../state/auth/auth.selectors';
+import { selectAuthLoading, selectAuthError, selectAccessToken, selectIsAuthenticated } from '../state/auth/auth.selectors';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject } from 'rxjs';
 import { takeUntil, filter } from 'rxjs/operators';
+import * as AuthActionsLogout from '../state/auth/auth.actions';
+import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
 
 @Component({
   standalone: true,
@@ -20,10 +23,103 @@ import { takeUntil, filter } from 'rxjs/operators';
     LoginFormComponent,
     MatCardModule,
     MatButtonModule,
+    MatIconModule,
     MatProgressSpinnerModule,
+    CartIconComponent,
   ],
   template: `
-    <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4 relative overflow-hidden">
+    <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
+      <!-- Navbar -->
+      <nav class="backdrop-blur-md bg-white/10 border-b border-white/20 sticky top-0 z-50">
+        <div class="mx-auto max-w-7xl px-6 py-4">
+          <div class="flex justify-between items-center">
+            <!-- Logo -->
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-linear-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                <span class="text-white font-bold text-lg">🛍️</span>
+              </div>
+              <h1 class="text-2xl font-bold text-white">My Shop</h1>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="hidden md:flex items-center gap-6">
+              <button 
+                type="button"
+                mat-button
+                routerLink="/"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Home
+              </button>
+              <button 
+                type="button"
+                mat-button
+                routerLink="/shop/products"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Products
+              </button>
+              <button 
+                type="button"
+                mat-button
+                routerLink="/shop/rating"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Ratings
+              </button>
+              <button 
+                type="button"
+                mat-button
+                *ngIf="isAuthenticated$ | async"
+                routerLink="/account/profile"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Mon Compte
+              </button>
+              <button 
+                type="button"
+                mat-button
+                routerLink="/dev"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Dev
+              </button>
+            </div>
+          
+            <!-- Auth Section -->
+            <div class="flex items-center gap-4">
+              <!-- Cart Icon -->
+              <app-cart-icon></app-cart-icon>
+
+              @if (isAuthenticated$ | async) {
+                <div class="flex items-center gap-3 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-full">
+                  <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  <span class="text-green-200 font-medium text-sm">Authenticated</span>
+                </div>
+                <button
+                  type="button"
+                  mat-button
+                  (click)="logout()"
+                  class="text-red-300 hover:text-red-100 transition"
+                >
+                  Logout
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  mat-raised-button
+                  routerLink="/login"
+                  class="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  Sign In
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div class="flex items-center justify-center px-4 relative overflow-hidden min-h-[calc(100vh-80px)]">
       <!-- Animated background elements -->
       <div class="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
       <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
@@ -88,10 +184,16 @@ import { takeUntil, filter } from 'rxjs/operators';
       </div>
     </div>
   `,
+  styles: [`
+    :host ::ng-deep .mat-mdc-button {
+      text-transform: none !important;
+    }
+  `]
 })
 export class LoginPageComponent implements OnInit, OnDestroy {
   loading$: any;
   error$: any;
+  isAuthenticated$: any;
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -101,6 +203,7 @@ export class LoginPageComponent implements OnInit, OnDestroy {
   ) {
     this.loading$ = this.store.select(selectAuthLoading);
     this.error$ = this.store.select(selectAuthError);
+    this.isAuthenticated$ = this.store.select(selectIsAuthenticated);
   }
 
   ngOnInit(): void {
@@ -120,6 +223,10 @@ export class LoginPageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  logout(): void {
+    this.store.dispatch(AuthActionsLogout.logout());
   }
 
   handleLogin(credentials: { username: string; password: string }): void {
