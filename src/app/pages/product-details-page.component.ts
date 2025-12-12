@@ -1,22 +1,36 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
+import { Actions, ofType } from '@ngrx/effects';
 import * as CartActions from '../state/cart/cart.actions';
 import { selectCartItems } from '../state/cart/cart.selectors';
 import * as ProductsActions from '../state/products/products.actions';
 import { selectAllProducts } from '../state/products/products.selectors';
-import { Subject, Observable, combineLatest } from 'rxjs';
-import { takeUntil, tap, map, shareReplay, switchMap } from 'rxjs/operators';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { selectIsAuthenticated } from '../state/auth/auth.selectors';
 import * as AuthActions from '../state/auth/auth.actions';
 import * as WishlistActions from '../state/wishlist/wishlist.actions';
 import { selectIsProductInWishlist } from '../state/wishlist/wishlist.selectors';
+import * as ReviewsActions from '../state/reviews/reviews.actions';
+import {
+  selectReviewAverage,
+  selectReviewCount,
+  selectReviewError,
+  selectReviewList,
+  selectReviewLoading,
+  selectReviewPostError,
+  selectReviewPosting,
+} from '../state/reviews/reviews.selectors';
+import { Review, ReviewsFetchOptions } from '../state/reviews/review.model';
+import { selectUserFullName } from '../state/user/user.selectors';
 import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
 import { WishlistIconComponent } from '../components/wishlist-icon/wishlist-icon.component';
+import { Subject, Observable, combineLatest } from 'rxjs';
+import { takeUntil, tap, map, shareReplay, switchMap, distinctUntilChanged, filter } from 'rxjs/operators';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 interface Product {
   id: number;
@@ -32,7 +46,7 @@ interface Product {
 @Component({
   standalone: true,
   selector: 'app-product-details',
-  imports: [CommonModule, RouterLink, MatSnackBarModule, MatButtonModule, MatIconModule, CartIconComponent, WishlistIconComponent],
+  imports: [CommonModule, RouterLink, MatSnackBarModule, MatButtonModule, MatIconModule, ReactiveFormsModule, CartIconComponent, WishlistIconComponent],
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <!-- Navbar -->
@@ -181,7 +195,7 @@ interface Product {
                       </span>
                     }
                   </div>
-                  <span class="text-gray-300">{{ product.avgRating }} ({{ product.reviews_count }} reviews)</span>
+                  
                 </div>
               </div>
 
@@ -288,6 +302,152 @@ interface Product {
                 <p>✓ 30-day money-back guarantee</p>
                 <p>✓ 2-3 business days delivery</p>
               </div>
+
+              <!-- Reviews Section -->
+              <div class="space-y-5 mt-6">
+                <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6">
+                  <div class="flex flex-wrap justify-between gap-4">
+                    <div>
+                      <p class="text-sm uppercase tracking-wide text-gray-400 mb-1">Avis clients</p>
+                      <div class="flex items-end gap-3">
+                        <span class="text-4xl font-semibold text-white">
+                          {{ ((reviewAverage$ | async) || product?.avgRating || 0) | number:'1.1-1' }}
+                        </span>
+                        <span class="text-sm text-gray-300">
+                          ({{ (reviewCount$ | async) || product?.reviews_count || 0 }} avis)
+                        </span>
+                      </div>
+                    </div>
+                    <div class="flex flex-wrap gap-3 text-sm">
+                      <div>
+                        <label class="sr-only">Filtrer les avis</label>
+                        <select
+                          [value]="reviewFilterRating"
+                          (change)="handleRatingFilterChange($event)"
+                          class="review-select w-full min-w-[160px] border text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        >
+                          <option value="all">Toutes les notes</option>
+                          <option value="5">5 étoiles uniquement</option>
+                          <option value="4">4 étoiles et plus</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="sr-only">Trier les avis</label>
+                        <select
+                          [value]="reviewSortBy"
+                          (change)="handleSortChange($event)"
+                          class="review-select w-full min-w-[160px] border text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        >
+                          <option value="recent">Les plus récents</option>
+                          <option value="rating">Les mieux notés</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p
+                    *ngIf="reviewsError$ | async as reviewsError"
+                    class="text-sm text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-4 py-3 mt-4"
+                  >
+                    {{ reviewsError }}
+                  </p>
+
+                  <div class="mt-4 space-y-4">
+                    <ng-container *ngIf="reviewsLoading$ | async; else reviewsLoaded">
+                      <div class="py-8 text-center text-gray-400">Chargement des avis…</div>
+                    </ng-container>
+
+                    <ng-template #reviewsLoaded>
+                      <ng-container *ngIf="reviews$ | async as reviewsList">
+                        <div *ngIf="reviewsList.length; else noReviews" class="space-y-4">
+                          <article
+                            *ngFor="let review of reviewsList"
+                            class="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2"
+                          >
+                            <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-300">
+                              <div class="flex items-center gap-2">
+                                <span class="flex items-center gap-0.5 text-yellow-300">
+                                  <ng-container *ngFor="let star of [1, 2, 3, 4, 5]">
+                                    <span [class]="star <= review.rating ? 'text-yellow-400 text-base' : 'text-white/20 text-base'">★</span>
+                                  </ng-container>
+                                </span>
+                                <span>{{ review.author }}</span>
+                              </div>
+                              <span>{{ review.createdAt | date:'mediumDate' }}</span>
+                            </div>
+                            <p class="text-sm text-gray-300 leading-relaxed">{{ review.comment }}</p>
+                          </article>
+                        </div>
+                      </ng-container>
+                    </ng-template>
+
+                    <ng-template #noReviews>
+                      <div class="py-6 text-center text-sm text-gray-400 border border-dashed border-white/20 rounded-2xl">
+                        Aucun avis pour le moment.
+                      </div>
+                    </ng-template>
+                  </div>
+                </div>
+
+                <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6">
+                  <div class="flex items-center justify-between flex-wrap gap-3">
+                    <h3 class="text-lg font-semibold text-white">Laisser un avis</h3>
+                    <p class="text-sm text-gray-400">
+                      {{ (isAuthenticated$ | async) ? 'Merci de partager votre experience.' : 'Connectez-vous pour ecrire un avis.' }}
+                    </p>
+                  </div>
+
+                  <ng-container *ngIf="isAuthenticated$ | async; else reviewLoginPrompt">
+                    <form [formGroup]="reviewForm" (ngSubmit)="submitReview()" class="mt-4 space-y-4">
+                      <div>
+                        <label class="text-sm font-medium text-gray-300">Note</label>
+                        <select
+                          formControlName="rating"
+                          class="review-select w-full mt-2 border text-white px-3 py-2 rounded-lg text-sm"
+                        >
+                          <option *ngFor="let value of [5, 4, 3, 2, 1]" [value]="value">{{ value }} étoiles</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="text-sm font-medium text-gray-300">Commentaire</label>
+                        <textarea
+                          formControlName="comment"
+                          rows="3"
+                          class="w-full mt-2 bg-white/5 border border-white/20 text-white px-3 py-2 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          placeholder="Racontez ce qui vous a plu..."
+                        ></textarea>
+                        <p
+                          *ngIf="reviewForm.controls['comment'].invalid && reviewForm.controls['comment'].touched"
+                          class="text-xs text-rose-300 mt-1"
+                        >
+                          {{ reviewForm.controls['comment'].errors?.['required']
+                            ? 'Le commentaire est requis.'
+                            : 'Le commentaire doit compter au moins 5 characters.' }}
+                        </p>
+                      </div>
+                      <div class="text-right">
+                        <button
+                          type="submit"
+                          mat-raised-button
+                          class="review-submit-btn bg-emerald-600 hover:bg-emerald-500 text-white w-full sm:w-auto"
+                          [disabled]="reviewForm.invalid || (reviewPosting$ | async)"
+                        >
+                          {{ (reviewPosting$ | async) ? 'Envoi en cours…' : 'Publier mon avis' }}
+                        </button>
+                      </div>
+                    </form>
+                    <p *ngIf="reviewPostError$ | async as postError" class="text-xs text-rose-300 mt-2">
+                      {{ postError }}
+                    </p>
+                  </ng-container>
+
+                  <ng-template #reviewLoginPrompt>
+                    <div class="mt-4 text-sm text-gray-400">
+                      Les avis sont reserves aux membres connectes.
+                    </div>
+                  </ng-template>
+                </div>
+              </div>
             </div>
           </div>
             }
@@ -296,11 +456,47 @@ interface Product {
       </div>
     </div>
   `,
-  styles: [`
+  styles: [
+    `
     :host ::ng-deep .mat-mdc-button {
       text-transform: none !important;
     }
-  `]
+
+    .review-select {
+      background-color: rgba(15, 23, 42, 0.75);
+      border-color: rgba(255, 255, 255, 0.35);
+      color: #f8fafc;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .review-select:focus-visible {
+      border-color: #34d399;
+      box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.35);
+      outline: none;
+    }
+
+    .review-select option {
+      background-color: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .review-select:disabled {
+      background-color: rgba(15, 23, 42, 0.4);
+      color: rgba(255, 255, 255, 0.6);
+      cursor: not-allowed;
+    }
+
+    .review-submit-btn:disabled {
+      background: linear-gradient(180deg, #1f2937, #111827);
+      color: rgba(243, 244, 246, 0.7);
+      box-shadow: none;
+    }
+
+    :host ::ng-deep .review-submit-btn.mat-mdc-button:disabled {
+      border-color: transparent;
+    }
+    `,
+  ]
 })
 export class ProductDetailsPageComponent implements OnInit, OnDestroy {
   product$!: Observable<Product | null>;
@@ -311,20 +507,73 @@ export class ProductDetailsPageComponent implements OnInit, OnDestroy {
   cartItems$: Observable<any[]>;
   isAuthenticated$: any;
   private destroy$ = new Subject<void>();
+  reviewForm: FormGroup;
+  reviews$: Observable<Review[]>;
+  reviewsLoading$: Observable<boolean>;
+  reviewsError$: Observable<string | null>;
+  reviewAverage$: Observable<number>;
+  reviewCount$: Observable<number>;
+  reviewPosting$: Observable<boolean>;
+  reviewPostError$: Observable<string | null>;
+  reviewerName = 'Client';
+  reviewFilterRating: 'all' | '5' | '4' = 'all';
+  reviewSortBy: 'recent' | 'rating' = 'recent';
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private store: Store,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private fb: FormBuilder,
+    private actions$: Actions
   ) {
     this.cartItems$ = this.store.select(selectCartItems);
     this.isAuthenticated$ = this.store.select(selectIsAuthenticated);
+    this.reviews$ = this.store.select(selectReviewList);
+    this.reviewsLoading$ = this.store.select(selectReviewLoading);
+    this.reviewsError$ = this.store.select(selectReviewError);
+    this.reviewAverage$ = this.store.select(selectReviewAverage);
+    this.reviewCount$ = this.store.select(selectReviewCount);
+    this.reviewPosting$ = this.store.select(selectReviewPosting);
+    this.reviewPostError$ = this.store.select(selectReviewPostError);
+
+    this.reviewForm = this.fb.group({
+      rating: [5, [Validators.required]],
+      comment: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(500)]],
+    });
+
+    this.actions$
+      .pipe(ofType(ReviewsActions.postReviewSuccess), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.reviewForm.reset({ rating: 5, comment: '' });
+        this.reviewForm.markAsPristine();
+      });
+
+    this.store
+      .select(selectUserFullName)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((name) => {
+        this.reviewerName = name || 'Client';
+      });
   }
 
   ngOnInit(): void {
     // Load products to store
     this.store.dispatch(ProductsActions.loadProducts({ filters: {} }));
+
+    this.route.params
+      .pipe(
+        map((params) => Number(params['id'])),
+        distinctUntilChanged(),
+        tap((productId) => {
+          if (!Number.isFinite(productId)) {
+            return;
+          }
+          this.dispatchReviewLoad(productId);
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe();
 
     // Get the product from store based on route ID
     this.product$ = this.route.params.pipe(
@@ -348,10 +597,101 @@ export class ProductDetailsPageComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$),
       shareReplay({ bufferSize: 1, refCount: true })
     );
+
+    this.product$
+      .pipe(
+        filter((product): product is Product => !!product),
+        map((product) => product.id),
+        distinctUntilChanged(),
+        tap((productId) => this.dispatchReviewLoad(productId)),
+        takeUntil(this.destroy$)
+      )
+      .subscribe();
   }
 
   ngOnDestroy(): void {
     this.destroy$.complete();
+  }
+
+  private dispatchReviewLoad(productId: number): void {
+    this.store.dispatch(
+      ReviewsActions.loadReviews({ productId, filters: this.buildReviewFilters() })
+    );
+  }
+
+  private buildReviewFilters(): ReviewsFetchOptions {
+    const filters: ReviewsFetchOptions = { sortBy: this.reviewSortBy };
+
+    if (this.reviewFilterRating === '5') {
+      filters.minRating = 5;
+    } else if (this.reviewFilterRating === '4') {
+      filters.minRating = 4;
+    }
+
+    return filters;
+  }
+
+  private reloadReviews(): void {
+    if (!this.currentProduct?.id) {
+      return;
+    }
+
+    this.dispatchReviewLoad(this.currentProduct.id);
+  }
+
+  onReviewRatingFilterChange(value: 'all' | '4' | '5'): void {
+    this.reviewFilterRating = value;
+    this.reloadReviews();
+  }
+
+  onReviewSortChange(value: 'recent' | 'rating'): void {
+    this.reviewSortBy = value;
+    this.reloadReviews();
+  }
+
+  handleRatingFilterChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement | null)?.value;
+    if (!value) {
+      return;
+    }
+    this.onReviewRatingFilterChange(value as 'all' | '4' | '5');
+  }
+
+  handleSortChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement | null)?.value;
+    if (!value) {
+      return;
+    }
+    this.onReviewSortChange(value as 'recent' | 'rating');
+  }
+
+  submitReview(): void {
+    if (!this.currentProduct) {
+      return;
+    }
+
+    if (this.reviewForm.invalid) {
+      this.reviewForm.markAllAsTouched();
+      return;
+    }
+
+    const ratingControl = this.reviewForm.get('rating');
+    const commentControl = this.reviewForm.get('comment');
+    if (!ratingControl || !commentControl) {
+      return;
+    }
+
+    const rating = ratingControl.value as number;
+    const comment = commentControl.value as string;
+
+    this.store.dispatch(
+      ReviewsActions.postReview({
+        productId: this.currentProduct.id,
+        rating,
+        comment,
+        author: this.reviewerName || 'Client',
+      })
+    );
   }
 
   logout(): void {

@@ -53,6 +53,18 @@ A modern e-commerce frontend built with Angular 20 and NgRx. It's fully function
    - Responsive design for all screen sizes
    - Dark theme throughout the app
 
+8. **Wishlist with Persistence**
+   - Save products for later using NgRx and local storage
+   - Quickly add or remove products from the details page
+   - Shared icon in the navbar keeps saved count in sync
+   - Wishlist survives browser reloads and keeps your selections
+
+9. **Ratings and Reviews**
+   - Display existing reviews sorted and filtered on the product page
+   - Show live average rating and review count per product
+   - Allow authenticated users to post reviews with validation
+   - Persist reviews in mocked storage so they reappear on reload
+
 ---
 
 ## Getting Started
@@ -138,6 +150,7 @@ src/app/
 │   ├── cart-page.component.ts
 │   ├── product-rating-page.component.ts
 │   ├── checkout-page.component.ts
+|   ├── wishlist-page.component.ts
 │   ├── account/
 │   │   ├── account-profile.component.ts
 │   │   ├── account-orders.component.ts
@@ -155,6 +168,8 @@ src/app/
 │       ├── user.reducer.ts
 │       ├── user.selectors.ts
 │       └── user.effects.ts
+│   ├── wishlist/
+│   └── reviews/
 ├── components/
 │   ├── login-form/
 │   ├── product-card/

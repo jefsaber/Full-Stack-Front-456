@@ -15,11 +15,13 @@ import { productsReducer } from './state/products/products.reducer';
 import { cartReducer } from './state/cart/cart.reducer';
 import { userReducer } from './state/user/user.reducer';
 import { wishlistReducer } from './state/wishlist/wishlist.reducer';
+import { reviewsReducer } from './state/reviews/reviews.reducer';
 import { AuthEffects } from './state/auth/auth.effects';
 import { ProductsEffects } from './state/products/products.effects';
 import { CartEffects } from './state/cart/cart.effects';
 import { UserEffects } from './state/user/user.effects';
 import { WishlistEffects } from './state/wishlist/wishlist.effects';
+import { ReviewsEffects } from './state/reviews/reviews.effects';
 import { authInterceptor } from './services/auth.interceptor';
 import { StorageService } from './services/storage.service';
 
@@ -35,8 +37,16 @@ export const appConfig: ApplicationConfig = {
       cart: cartReducer,
       user: userReducer,
       wishlist: wishlistReducer,
+      reviews: reviewsReducer,
     }),
-    provideEffects([AuthEffects, ProductsEffects, CartEffects, UserEffects, WishlistEffects]),
+    provideEffects([
+      AuthEffects,
+      ProductsEffects,
+      CartEffects,
+      UserEffects,
+      WishlistEffects,
+      ReviewsEffects,
+    ]),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
     StorageService, // Initialize on app startup
   ],

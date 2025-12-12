@@ -130,7 +130,7 @@ import { WishlistIconComponent } from '../../components/wishlist-icon/wishlist-i
               </a>
             </div>
 
-            <div *ngFor="let order of orders" class="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-6 hover:border-white/20 transition-all">
+            <div *ngFor="let order of orders" class="bg-white/5 backdrop-blur-md rounded-2xl border mb-4 border-white/10 p-6 hover:border-white/20 transition-all">
               <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <!-- Order Info -->
                 <div class="flex-1">
