@@ -15,6 +15,7 @@ export interface Product {
   avgRating: number;
   description: string;
   stock: number;
+  lowStockThreshold: number;
   reviews_count: number;
   owner_id: number;
   ratings: { user_id: number; value: number }[];

@@ -33,7 +33,7 @@ export class OrdersStorageService {
         price: item.price,
       })),
       subtotal: orderData.subtotal || (orderData.items || []).reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0),
-      tax: orderData.tax || 0,
+      tax: orderData.tax ?? orderData.taxes ?? 0,
       shipping: orderData.shipping || 0,
       deliveryAddress: {
         street: orderData.address?.street || '',

@@ -40,6 +40,7 @@ interface Product {
   avgRating: number;
   reviews_count: number;
   stock: number;
+  lowStockThreshold: number;
   created_at: string;
 }
 
@@ -209,10 +210,11 @@ interface Product {
 
               <!-- Stock -->
               <div>
+                @let stockStatus = getStockStatus(product);
                 <p class="text-gray-300 mb-2">
-                  Availability:
-                  <span [class]="product.stock > 0 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'">
-                    {{ product.stock > 0 ? product.stock + ' in stock' : 'Out of stock' }}
+                  Disponibilité:
+                  <span [class]="stockStatus.class">
+                    {{ stockStatus.message }}
                   </span>
                 </p>
                 <div class="w-full bg-white/10 rounded-full h-2">
@@ -663,6 +665,21 @@ export class ProductDetailsPageComponent implements OnInit, OnDestroy {
       return;
     }
     this.onReviewSortChange(value as 'recent' | 'rating');
+  }
+
+  getStockStatus(product: Product): { message: string; class: string } {
+    if (product.stock === 0) {
+      return { message: 'Rupture de stock', class: 'text-red-400 font-bold' };
+    }
+
+    if (product.stock <= product.lowStockThreshold) {
+      return {
+        message: `Plus que ${product.stock} en stock`,
+        class: 'text-amber-300 font-semibold',
+      };
+    }
+
+    return { message: 'En stock', class: 'text-emerald-400 font-bold' };
   }
 
   submitReview(): void {

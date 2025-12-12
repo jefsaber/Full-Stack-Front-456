@@ -1,9 +1,12 @@
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, SimpleChanges, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
-import { selectCartTotal, selectTotalWithShipping } from '../../state/cart/cart.selectors';
-import { Observable } from 'rxjs';
+import { selectCartBreakdown } from '../../state/cart/cart.selectors';
+import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
+import { map } from 'rxjs/operators';
+
+const EXPRESS_SURCHARGE = 9.99;
 
 @Component({
   standalone: true,
@@ -212,12 +215,14 @@ import { Observable } from 'rxjs';
   `,
   styles: [],
 })
-export class CheckoutAddressComponent {
+export class CheckoutAddressComponent implements OnInit, OnChanges {
   @Output() nextStep = new EventEmitter<any>();
   @Output() previousStep = new EventEmitter<void>();
+  @Input() initialAddress: any;
 
   addressForm: FormGroup;
   totalWithShipping$: Observable<number>;
+  private deliveryOptionSubject = new BehaviorSubject<string>('standard');
 
   constructor(
     private fb: FormBuilder,
@@ -235,7 +240,34 @@ export class CheckoutAddressComponent {
       deliveryOption: ['standard', Validators.required],
     });
 
-    this.totalWithShipping$ = this.store.select(selectTotalWithShipping);
+    const deliveryControl = this.addressForm.get('deliveryOption');
+    deliveryControl!.valueChanges.subscribe((value) => {
+      this.deliveryOptionSubject.next(value);
+    });
+
+    this.totalWithShipping$ = combineLatest([
+      this.store.select(selectCartBreakdown),
+      this.deliveryOptionSubject.asObservable(),
+    ]).pipe(
+      map(([breakdown, option]) => breakdown.grandTotal + (option === 'express' ? EXPRESS_SURCHARGE : 0))
+    );
+  }
+
+  ngOnInit(): void {
+    this.patchInitialValues();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['initialAddress'] && changes['initialAddress'].currentValue) {
+      this.patchInitialValues();
+    }
+  }
+
+  private patchInitialValues(): void {
+    if (this.initialAddress) {
+      this.addressForm.patchValue(this.initialAddress);
+      this.deliveryOptionSubject.next(this.addressForm.get('deliveryOption')?.value || 'standard');
+    }
   }
 
   onPreviousStep(): void {

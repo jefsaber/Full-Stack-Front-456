@@ -131,6 +131,7 @@ import { WishlistIconComponent } from '../components/wishlist-icon/wishlist-icon
               <app-checkout-address
                 (nextStep)="onAddressNext($event)"
                 (previousStep)="goToStep(1)"
+                [initialAddress]="addressData"
               ></app-checkout-address>
             }
             @case (3) {

@@ -231,6 +231,28 @@ The system uses NgRx to manage all account data, keeping everything in sync acro
 
 ---
 
+## Advanced Business Rules
+
+### 4.1 Promotions / Promo Codes
+
+- The checkout summary step displays a promo code input plus an Apply button; the button stays disabled when the field is empty or while a request is running.
+- The payload sent to the mock `/apply-promo` endpoint contains the current cart and the entered code; the response now returns a full breakdown (`itemsTotal`, `discount`, `shipping`, `taxes`, `grandTotal`, `appliedPromos`) so the frontend renders exactly what a backend would send.
+- Three codes are supported: `WELCOME10` (10% off items), `FREESHIP` (free shipping), and `VIP20` (20% off when the subtotal exceeds the mock threshold). Invalid codes, threshold violations, and empty input surface descriptive error messages.
+- Discounts, shipping fees, and taxes from the promo response propagate through every summary card (summary, review, confirmation), and you can clear the active promo via the “Clear” pill button beneath the applied codes.
+
+### 4.2 Taxes and Shipping
+
+- Taxes and shipping values now come from the promo response (or an equivalent API) instead of being hard-coded.
+- Every summary always shows subtotal, discounts, shipping, taxes, and final total in that order so the user sees a consistent breakdown.
+
+### 4.3 Stock Awareness
+
+- Each product exposes both `stock` and `lowStockThreshold`.
+- Product pages display “In stock”, “Only X left”, or “Out of stock” according to the defined thresholds.
+- The Add to Cart button disables immediately when `stock === 0`, preventing purchases of sold-out products.
+
+---
+
 ## Technology Used
 
 - **Angular 20**: Modern framework with standalone components

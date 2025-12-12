@@ -1,13 +1,19 @@
 import { createReducer, on } from '@ngrx/store';
 import * as CartActions from './cart.actions';
-import { CartItem } from './cart.actions';
+import { CartItem, CartPromoResult } from './cart.actions';
 
 export interface CartState {
   items: CartItem[];
+  promo: CartPromoResult | null;
+  promoLoading: boolean;
+  promoError: string | null;
 }
 
 export const initialState: CartState = {
   items: [],
+  promo: null,
+  promoLoading: false,
+  promoError: null,
 };
 
 export const cartReducer = createReducer(
@@ -56,11 +62,34 @@ export const cartReducer = createReducer(
   }),
 
   on(CartActions.clearCart, () => ({
-    items: [],
+    ...initialState,
   })),
 
   on(CartActions.loadCartFromStorage, (state, { items }) => ({
     ...state,
     items,
-  }))
+  })),
+  on(CartActions.applyPromoCode, (state) => ({
+    ...state,
+    promoLoading: true,
+    promoError: null,
+  })),
+  on(CartActions.applyPromoSuccess, (state, { result }) => ({
+    ...state,
+    promo: result,
+    promoLoading: false,
+    promoError: null,
+  })),
+  on(CartActions.applyPromoFailure, (state, { error }) => ({
+    ...state,
+    promo: null,
+    promoLoading: false,
+    promoError: error,
+  })),
+  on(CartActions.clearCartPromo, (state) => ({
+    ...state,
+    promo: null,
+    promoLoading: false,
+    promoError: null,
+  })),
 );

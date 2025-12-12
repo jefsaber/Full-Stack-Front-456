@@ -1,16 +1,14 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import {
   selectCartItems,
-  selectCartTotal,
-  selectShippingCost,
-  selectTotalWithShipping,
+  selectCartBreakdown,
 } from '../../state/cart/cart.selectors';
 import { Observable, combineLatest } from 'rxjs';
-import { CartItem } from '../../state/cart/cart.actions';
+import { CartItem, CartPromoResult } from '../../state/cart/cart.actions';
 import * as CartActions from '../../state/cart/cart.actions';
 import { OrdersStorageService } from '../../services/orders-storage.service';
 import { OrderDetail } from '../../state/user/user.actions';
@@ -24,6 +22,8 @@ interface OrderConfirmation {
   delivery_date: string;
   tracking_url: string;
 }
+
+const EXPRESS_DELIVERY_FEE = 9.99;
 
 @Component({
   standalone: true,
@@ -150,26 +150,36 @@ interface OrderConfirmation {
           <!-- Pricing -->
           <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6">
             <h3 class="font-bold text-white mb-4">Pricing</h3>
-            <div class="space-y-2 text-gray-300">
-              <div class="flex justify-between">
-                <span>Subtotal</span>
-                <span>€{{ (cartTotal$ | async)?.toFixed(2) }}</span>
+            <ng-container *ngIf="breakdown$ | async as breakdown">
+              <div class="space-y-2 text-gray-300">
+                <div class="flex justify-between">
+                  <span>Sous-total</span>
+                  <span>€{{ breakdown.itemsTotal.toFixed(2) }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Remise(s)</span>
+                  <span class="text-emerald-400">-€{{ breakdown.discount.toFixed(2) }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Frais de port</span>
+                  <span>€{{ breakdown.shipping.toFixed(2) }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Taxes</span>
+                  <span>€{{ breakdown.taxes.toFixed(2) }}</span>
+                </div>
+                <div *ngIf="addressData?.deliveryOption === 'express'" class="flex justify-between text-gray-300">
+                  <span>Express Delivery</span>
+                  <span>€{{ expressDeliveryFee.toFixed(2) }}</span>
+                </div>
+                <div class="flex justify-between border-t border-white/10 pt-2 mt-2">
+                  <span class="font-bold text-white">TOTAL</span>
+                  <span class="text-xl font-bold text-emerald-400">
+                    €{{ (breakdown.grandTotal + (addressData?.deliveryOption === 'express' ? expressDeliveryFee : 0)).toFixed(2) }}
+                  </span>
+                </div>
               </div>
-              <div class="flex justify-between">
-                <span>Shipping</span>
-                <span>€{{ (shippingCost$ | async)?.toFixed(2) }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span>Tax (19%)</span>
-                <span>€{{ (((cartTotal$ | async) ?? 0) * 0.19).toFixed(2) }}</span>
-              </div>
-              <div class="flex justify-between border-t border-white/10 pt-2 mt-2">
-                <span class="font-bold text-white">TOTAL</span>
-                <span class="text-xl font-bold text-emerald-400">
-                  €{{ (totalWithShipping$ | async)?.toFixed(2) }}
-                </span>
-              </div>
-            </div>
+            </ng-container>
           </div>
         </div>
 
@@ -187,7 +197,7 @@ interface OrderConfirmation {
         <div class="flex gap-4">
           <button
             type="button"
-            (click)="previousStep()"
+            (click)="handlePreviousStep()"
             class="flex-1 bg-white/10 hover:bg-white/20 border border-white/20 text-white py-3 px-4 rounded-lg font-semibold transition"
           >
             ← Back to Address
@@ -211,31 +221,29 @@ interface OrderConfirmation {
   styles: [],
 })
 export class CheckoutConfirmComponent implements OnInit {
+  @Output() previousStep = new EventEmitter<void>();
   @Input() addressData: any;
   items$: Observable<CartItem[]>;
-  cartTotal$: Observable<number>;
-  shippingCost$: Observable<number>;
-  totalWithShipping$: Observable<number>;
+  breakdown$: Observable<CartPromoResult>;
 
   orderConfirmation: OrderConfirmation | null = null;
   termsAccepted = false;
   placing = false;
   confirmedItems: OrderDetail['items'] = [];
+  expressDeliveryFee = EXPRESS_DELIVERY_FEE;
 
   constructor(
     private store: Store,
     private ordersStorage: OrdersStorageService
   ) {
     this.items$ = this.store.select(selectCartItems);
-    this.cartTotal$ = this.store.select(selectCartTotal);
-    this.shippingCost$ = this.store.select(selectShippingCost);
-    this.totalWithShipping$ = this.store.select(selectTotalWithShipping);
+    this.breakdown$ = this.store.select(selectCartBreakdown);
   }
 
   ngOnInit(): void {}
 
-  previousStep(): void {
-    // Will be handled by parent
+  handlePreviousStep(): void {
+    this.previousStep.emit();
   }
 
   placeOrder(): void {
@@ -243,22 +251,19 @@ export class CheckoutConfirmComponent implements OnInit {
 
     this.placing = true;
 
-    combineLatest([
-      this.items$,
-      this.totalWithShipping$,
-      this.cartTotal$,
-      this.shippingCost$,
-    ])
+    combineLatest([this.items$, this.breakdown$])
       .pipe(take(1))
-      .subscribe(([items, total, subtotal, shipping]) => {
-        const tax = Math.round(subtotal * 0.19 * 100) / 100;
+      .subscribe(([items, breakdown]) => {
+        const expressCharge = this.addressData?.deliveryOption === 'express' ? EXPRESS_DELIVERY_FEE : 0;
+        const shippingWithExpress = breakdown.shipping + expressCharge;
+        const totalWithExpress = breakdown.grandTotal + expressCharge;
 
         const orderData = {
           items,
-          total,
-          subtotal,
-          tax,
-          shipping,
+          total: totalWithExpress,
+          subtotal: breakdown.itemsTotal,
+          tax: breakdown.taxes,
+          shipping: shippingWithExpress,
           address: this.addressData,
           deliveryOption: this.addressData?.deliveryOption || 'standard',
         };
@@ -268,7 +273,7 @@ export class CheckoutConfirmComponent implements OnInit {
         this.orderConfirmation = {
           order_number: `ORD-${savedOrder.id}`,
           status: 'confirmed',
-          total: total,
+          total: totalWithExpress,
           delivery_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
           tracking_url: savedOrder.trackingUrl || '',
         };
