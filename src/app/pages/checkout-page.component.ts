@@ -57,6 +57,15 @@ import { WishlistIconComponent } from '../components/wishlist-icon/wishlist-icon
                 Ratings
               </button>
               <button 
+                *ngIf="isAuthenticated$ | async"
+                type="button"
+                mat-button
+                routerLink="/admin/dashboard"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Dashboard
+              </button>
+              <button 
                 type="button"
                 mat-button
                 *ngIf="isAuthenticated$ | async"

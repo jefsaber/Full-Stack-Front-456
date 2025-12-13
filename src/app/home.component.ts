@@ -1,11 +1,15 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { Store } from '@ngrx/store';
+import { selectIsAuthenticated } from './state/auth/auth.selectors';
 
 @Component({
   standalone: true,
   selector: 'app-home',
-  imports: [RouterLink, MatButtonModule],
+  imports: [CommonModule, RouterLink, MatButtonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-900 text-white">
       <nav class="backdrop-blur-md bg-white/10 border-b border-white/20 sticky top-0 z-50">
@@ -25,6 +29,15 @@ import { MatButtonModule } from '@angular/material/button';
               <button mat-button type="button" routerLink="/" class="hover:text-white transition">Home</button>
               <button mat-button type="button" routerLink="/shop/products" class="hover:text-white transition">Products</button>
               <button mat-button type="button" routerLink="/shop/rating" class="hover:text-white transition">Ratings</button>
+              <button
+                *ngIf="isAuthenticated$ | async"
+                mat-button
+                type="button"
+                routerLink="/admin/dashboard"
+                class="hover:text-white transition"
+              >
+                Admin
+              </button>
               <button mat-button type="button" routerLink="/dev" class="hover:text-white transition">Dev</button>
             </div>
           </div>
@@ -79,4 +92,6 @@ import { MatButtonModule } from '@angular/material/button';
   `,
 })
 export class HomeComponent {
+  private readonly store = inject(Store);
+  readonly isAuthenticated$ = this.store.select(selectIsAuthenticated);
 }

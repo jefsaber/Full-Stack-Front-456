@@ -6,17 +6,12 @@ import { DevAuthComponent } from './dev/dev-auth.component';
 import { DevProductsComponent } from './dev/dev-products.component';
 import { DevProductRatingComponent } from './dev/dev-product-rating.component';
 import { DevOrdersComponent } from './dev/dev-orders.component';
+import { DevCartComponent } from './dev/dev-cart.component';
+import { DevAdminComponent } from './dev/dev-admin.component';
+import { DevReviewsComponent } from './dev/dev-reviews.component';
+import { DevProfileComponent } from './dev/dev-profile.component';
 import { AppPlaceholderComponent } from './app-placeholder.component';
 import { LoginPageComponent } from './pages/login-page.component';
-import { ProductsPageComponent } from './pages/products-page.component';
-import { ProductRatingPageComponent } from './pages/product-rating-page.component';
-import { ProductDetailsPageComponent } from './pages/product-details-page.component';
-import { CartPageComponent } from './pages/cart-page.component';
-import { CheckoutPageComponent } from './pages/checkout-page.component';
-import { WishlistPageComponent } from './pages/wishlist-page.component';
-import { AccountProfileComponent } from './pages/account/account-profile.component';
-import { AccountOrdersComponent } from './pages/account/account-orders.component';
-import { AccountOrderDetailsComponent } from './pages/account/account-order-details.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent, pathMatch: 'full' },
@@ -24,29 +19,30 @@ export const routes: Routes = [
   {
     path: 'shop',
     canActivate: [authGuard],
-    children: [
-      { path: 'products', component: ProductsPageComponent },
-      { path: 'products/:id', component: ProductDetailsPageComponent },
-      { path: 'rating', component: ProductRatingPageComponent },
-      { path: 'cart', component: CartPageComponent },
-      { path: 'wishlist', component: WishlistPageComponent },
-      { path: 'checkout', component: CheckoutPageComponent },
-    ],
+    canActivateChild: [authGuard],
+    loadChildren: () => import('./modules/shop/shop.module').then((module) => module.ShopModule),
   },
   {
     path: 'account',
     canActivate: [authGuard],
-    children: [
-      { path: 'profile', component: AccountProfileComponent },
-      { path: 'orders', component: AccountOrdersComponent },
-      { path: 'orders/:id', component: AccountOrderDetailsComponent },
-    ],
+    canActivateChild: [authGuard],
+    loadChildren: () => import('./modules/account/account.module').then((module) => module.AccountModule),
+  },
+  {
+    path: 'admin',
+    canActivate: [authGuard],
+    canActivateChild: [authGuard],
+    loadChildren: () => import('./modules/admin/admin.module').then((module) => module.AdminModule),
   },
   { path: 'dev', component: DevIndexComponent },
   { path: 'dev/auth', component: DevAuthComponent },
   { path: 'dev/products', component: DevProductsComponent },
   { path: 'dev/products/:id/rating', component: DevProductRatingComponent },
   { path: 'dev/orders', component: DevOrdersComponent },
+  { path: 'dev/cart', component: DevCartComponent },
+  { path: 'dev/admin', component: DevAdminComponent },
+  { path: 'dev/reviews', component: DevReviewsComponent },
+  { path: 'dev/profile', component: DevProfileComponent },
   { path: 'app', component: AppPlaceholderComponent },
   { path: '**', redirectTo: '' },
 ];

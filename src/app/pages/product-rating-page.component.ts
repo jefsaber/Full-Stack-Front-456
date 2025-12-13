@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -45,6 +45,7 @@ export interface ProductRating {
     CartIconComponent,
     WishlistIconComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <!-- Navbar -->
@@ -93,6 +94,15 @@ export interface ProductRating {
                 class="text-gray-200 hover:text-white transition font-medium"
               >
                 Mon Compte
+              </button>
+              <button 
+                type="button"
+                mat-button
+                *ngIf="isAuthenticated$ | async"
+                routerLink="/admin/dashboard"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Admin
               </button>
               <button 
                 type="button"

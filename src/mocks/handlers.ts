@@ -1,9 +1,13 @@
 import { HttpResponse, HttpResponseResolver, http } from 'msw';
 import { OrderDetail, OrderSummary } from '../app/state/user/user.actions';
+import { ReviewsFetchOptions } from '../app/state/reviews/review.model';
 import { avgRating } from './utils';
 import { products } from './data';
+import { addReview, getReviewStats, getReviewsForProduct } from './reviews';
+import { MOCK_ADMIN_STATS } from '../app/services/admin-dashboard.service';
 
 const ORDERS_KEY = 'userOrders';
+const PROFILE_KEY = 'userProfile';
 
 const defaultOrders: OrderDetail[] = [
   {
@@ -82,6 +86,43 @@ const toOrderSummary = (order: OrderDetail): OrderSummary => ({
   status: order.status,
   itemCount: order.itemCount,
 });
+
+const defaultProfile = {
+  fullName: 'Célestine Martin',
+  email: 'celestine.martin@example.com',
+  preferences: {
+    newsletter: true,
+    preferredRating: 4,
+  },
+};
+
+const getStoredProfile = () => {
+  const stored = localStorage.getItem(PROFILE_KEY);
+  if (!stored) {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(defaultProfile));
+    return { ...defaultProfile };
+  }
+  try {
+    return JSON.parse(stored);
+  } catch {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(defaultProfile));
+    return { ...defaultProfile };
+  }
+};
+
+const updateStoredProfile = (patch: Partial<typeof defaultProfile>) => {
+  const current = getStoredProfile();
+  const updated = {
+    ...current,
+    ...patch,
+    preferences: {
+      ...current.preferences,
+      ...patch.preferences,
+    },
+  };
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(updated));
+  return updated;
+};
 
 const sanitizeNumber = (value: string | null, fallback: number): number => {
   const parsed = Number(value);
@@ -219,6 +260,124 @@ const handleProductRating: HttpResponseResolver = ({ params }) => {
   return HttpResponse.json({ product_id: product.id, avg_rating: avg, count });
 };
 
+const parseProductId = (value: string | readonly string[] | null | undefined): number | null => {
+  if (value == null) {
+    return null;
+  }
+  const normalized = Array.isArray(value) ? value[0] : value;
+  const parsed = Number(normalized);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const handleProductStock: HttpResponseResolver = ({ params }) => {
+  const productId = parseProductId(params['id']);
+  if (!productId) {
+    return HttpResponse.json({ detail: 'Product not found' }, { status: 404 });
+  }
+  const product = products.find((item) => item.id === productId);
+  if (!product) {
+    return HttpResponse.json({ detail: 'Product not found' }, { status: 404 });
+  }
+  return HttpResponse.json({ product_id: product.id, stock: product.stock });
+};
+
+const handleValidateStock: HttpResponseResolver = async ({ request }) => {
+  let payload: { items?: Array<{ productId: number; quantity: number }> };
+  try {
+    payload = (await request.json()) as typeof payload;
+  } catch {
+    return HttpResponse.json({ detail: 'Invalid payload' }, { status: 400 });
+  }
+
+  if (!payload?.items?.length) {
+    return HttpResponse.json({ detail: 'No items provided' }, { status: 400 });
+  }
+
+  for (const item of payload.items) {
+    if (!Number.isFinite(item.productId)) {
+      return HttpResponse.json({ detail: 'Missing product id' }, { status: 400 });
+    }
+    const product = products.find((entry) => entry.id === item.productId);
+    if (!product) {
+      return HttpResponse.json({ detail: `Produit ${item.productId} introuvable` }, { status: 404 });
+    }
+    if (item.quantity > product.stock) {
+      return HttpResponse.json(
+        { detail: `Stock insuffisant pour le produit ${product.name}` },
+        { status: 400 },
+      );
+    }
+  }
+
+  const summary = payload.items.map((item) => {
+    const product = products.find((entry) => entry.id === item.productId)!;
+    return {
+      product_id: product.id,
+      requested: item.quantity,
+      available: product.stock,
+    };
+  });
+
+  return HttpResponse.json({ valid: true, summary, message: 'Stock vérifié' });
+};
+
+const handleReviewsList: HttpResponseResolver = ({ request, params }) => {
+  const productId = parseProductId(params['id']);
+  if (!productId) {
+    return HttpResponse.json({ detail: 'Product not found' }, { status: 404 });
+  }
+  const url = new URL(request.url);
+  const minRatingParam = url.searchParams.get('min_rating');
+  const sortByRaw = url.searchParams.get('sort_by');
+  const computedSort: ReviewsFetchOptions['sortBy'] =
+    sortByRaw === 'rating' ? 'rating' : sortByRaw === 'recent' ? 'recent' : undefined;
+  const filters: ReviewsFetchOptions = {
+    minRating: minRatingParam ? Number(minRatingParam) : undefined,
+    sortBy: computedSort,
+  };
+  const reviews = getReviewsForProduct(productId, filters);
+  const stats = getReviewStats(productId);
+  return HttpResponse.json({ product_id: productId, count: reviews.length, average: stats.average, results: reviews });
+};
+
+const handleReviewPost: HttpResponseResolver = async ({ request, params }) => {
+  const productId = parseProductId(params['id']);
+  if (!productId) {
+    return HttpResponse.json({ detail: 'Product not found' }, { status: 404 });
+  }
+  let payload: { author?: string; rating?: number; comment?: string };
+  try {
+    payload = (await request.json()) as typeof payload;
+  } catch {
+    return HttpResponse.json({ detail: 'Invalid request body' }, { status: 400 });
+  }
+  if (payload.rating == null || payload.comment == null) {
+    return HttpResponse.json({ detail: 'Rating and comment are required' }, { status: 400 });
+  }
+  try {
+    const review = addReview(productId, payload.author || 'Client', payload.rating, payload.comment);
+    return HttpResponse.json(review, { status: 201 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to save review';
+    return HttpResponse.json({ detail: message }, { status: 400 });
+  }
+};
+
+const handleProfileGet: HttpResponseResolver = () => {
+  return HttpResponse.json(getStoredProfile());
+};
+
+const handleProfilePatch: HttpResponseResolver = async ({ request }) => {
+  let payload: Partial<typeof defaultProfile>;
+  try {
+    payload = (await request.json()) as Partial<typeof defaultProfile>;
+  } catch {
+    return HttpResponse.json({ detail: 'Invalid payload' }, { status: 400 });
+  }
+  const updated = updateStoredProfile(payload);
+  return HttpResponse.json(updated);
+};
+
 export const handlers = [
   http.post('/api/auth/token/', () =>
     HttpResponse.json({ access: 'mock-access-token', refresh: 'mock-refresh-token' }),
@@ -230,12 +389,26 @@ export const handlers = [
   http.get('/api/products', handleProductList),
   http.get('/api/products/:id/rating/', handleProductRating),
   http.get('/api/products/:id/rating', handleProductRating),
+  http.get('/api/products/:id/stock/', handleProductStock),
+  http.get('/api/products/:id/stock', handleProductStock),
+  http.post('/api/cart/validate-stock/', handleValidateStock),
+  http.post('/api/cart/validate-stock', handleValidateStock),
+  http.get('/api/products/:id/reviews/', handleReviewsList),
+  http.get('/api/products/:id/reviews', handleReviewsList),
+  http.post('/api/products/:id/reviews/', handleReviewPost),
+  http.post('/api/products/:id/reviews', handleReviewPost),
+
+  http.get('/api/admin/stats/', () => HttpResponse.json(MOCK_ADMIN_STATS)),
+  http.get('/api/admin/stats', () => HttpResponse.json(MOCK_ADMIN_STATS)),
 
   http.get('/api/me/orders/', () => {
     const orders = getStoredOrders();
     const summaries = orders.map(toOrderSummary);
     return HttpResponse.json(summaries);
   }),
+
+  http.get('/api/me/', handleProfileGet),
+  http.patch('/api/me/', handleProfilePatch),
 
   http.get('/api/orders/:orderId/', ({ params }) => {
     const orderIdParam = params['orderId'];

@@ -143,14 +143,36 @@ Once you're logged in, you can access your account from the navbar:
 
 ```
 src/app/
+├── app.config.ts
+├── app.html
+├── app.routes.ts
+├── dev/
+│   ├── dev-index.component.ts
+│   ├── dev-auth.component.ts
+│   ├── dev-products.component.ts
+│   ├── dev-product-rating.component.ts
+│   ├── dev-cart.component.ts
+│   ├── dev-orders.component.ts
+│   ├── dev-reviews.component.ts
+│   ├── dev-profile.component.ts
+│   └── dev-admin.component.ts
+├── modules/
+│   ├── shop/
+│   │   └── shop.module.ts
+│   ├── account/
+│   │   └── account.module.ts
+│   └── admin/
+│       └── admin.module.ts
 ├── pages/
+│   ├── home.component.ts
 │   ├── login-page.component.ts
 │   ├── products-page.component.ts
 │   ├── product-details-page.component.ts
-│   ├── cart-page.component.ts
 │   ├── product-rating-page.component.ts
+│   ├── cart-page.component.ts
+│   ├── wishlist-page.component.ts
 │   ├── checkout-page.component.ts
-|   ├── wishlist-page.component.ts
+│   ├── admin-dashboard.component.ts
 │   ├── account/
 │   │   ├── account-profile.component.ts
 │   │   ├── account-orders.component.ts
@@ -163,41 +185,57 @@ src/app/
 │   ├── auth/
 │   ├── products/
 │   ├── cart/
-│   └── user/
-│       ├── user.actions.ts
-│       ├── user.reducer.ts
-│       ├── user.selectors.ts
-│       └── user.effects.ts
+│   ├── user/
+│   │   ├── user.actions.ts
+│   │   ├── user.reducer.ts
+│   │   ├── user.selectors.ts
+│   │   └── user.effects.ts
 │   ├── wishlist/
-│   └── reviews/
+│   ├── reviews/
+│   └── admin/
 ├── components/
 │   ├── login-form/
 │   ├── product-card/
 │   ├── skeleton-loader/
-│   └── cart-icon/
+│   ├── cart-icon/
+│   └── wishlist-icon/
 ├── services/
 │   ├── auth.interceptor.ts
 │   ├── shop-api.service.ts
-│   └── storage.service.ts
-└── app.routes.ts
+│   ├── storage.service.ts
+│   └── admin-dashboard.service.ts
+├── mocks/
+│   ├── data.ts
+│   ├── handlers.ts
+│   ├── promo.ts
+│   ├── reviews.ts
+│   ├── utils.ts
+│   └── browser.ts
+└── main.ts
 ```
 
 ---
 
 ## Available Routes
 
-| Path                  | What You'll Find                   |
-| --------------------- | ---------------------------------- |
-| `/login`              | Login page - enter any credentials |
-| `/app`                | Home page with navigation options  |
-| `/shop/products`      | Browse all products with filters   |
-| `/shop/products/:id`  | Detailed view of a single product  |
-| `/shop/cart`          | Your shopping cart                 |
-| `/shop/checkout`      | Multi-step checkout process        |
-| `/shop/rating`        | Check product ratings              |
-| `/account/profile`    | Your profile and preferences       |
-| `/account/orders`     | Your order history                 |
-| `/account/orders/:id` | Detailed view of a specific order  |
+| Path                  | What You'll Find                                                        |
+| --------------------- | ----------------------------------------------------------------------- |
+| `/`                   | Landing / home page with dev navigation links                           |
+| `/login`              | Login page - enter any credentials                                      |
+| `/app`                | Alternate home that keeps the nav in view                               |
+| `/shop`               | Redirects to `/shop/products` by default                                |
+| `/shop/products`      | Browse all products with filters                                        |
+| `/shop/products/:id`  | Detailed view of a single product                                       |
+| `/shop/cart`          | Your shopping cart                                                      |
+| `/shop/checkout`      | Multi-step checkout process                                             |
+| `/shop/rating`        | Product ratings aggregated across the catalog                           |
+| `/account/profile`    | Your profile plus newsletter and rating prefs                           |
+| `/account/orders`     | Your full order history                                                 |
+| `/account/orders/:id` | Detailed view of a specific past order                                  |
+| `/account/wishlist`   | Wishlist items saved via NgRx / local storage                           |
+| `/admin/dashboard`    | NgRx-powered admin stats dashboard                                      |
+| `/dev`                | MSW playground for auth, products, cart, and reviews                    |
+| `/dev/*`              | Additional dev routes (products, ratings, cart, orders, profile, admin) |
 
 ---
 
@@ -321,3 +359,17 @@ Everything in this app uses mock data:
 ## That's It
 
 The app is ready to use. No configuration needed. Just run `ng serve` and start shopping!
+
+---
+
+## Modular Architecture & Tooling
+
+- `/shop`, `/account`, and `/admin` each live in their own lazy-loaded feature module so the bundle stays lean and the guards you added protect the routes consistently through `authGuard` at both the parent and child level.
+- The new `AdminModule` ships the dashboard page plus its NgRx-backed selectors/effects and shares the same mock stats data that the `dev-admin` zone uses via the `/api/admin/stats` MSW handler.
+- We rely on Mock Service Worker for every backend interaction (`/api/products`, `/api/orders`, `/api/admin/stats`, etc.), so the dev environment (used via `/dev` routes) mirrors the production behavior without hitting a real server.
+
+## Performance Expectations
+
+- Every page or list component should stay on `ChangeDetectionStrategy.OnPush` unless there is a documented need to deviate. This keeps rendering predictable across the lazy-loaded modules and ensures the dashboard, account pages, checkout, and product listings only re-render when their inputs truly change.
+- Every `*ngFor` iteration over collections (products, cart items, orders, reviews, wishlist entries, recent dashboard stats, etc.) must include a `trackBy` function so Angular can reuse DOM nodes and avoid unnecessary re-render cycles.
+- When you introduce new lists or page components, double-check they are standalone, set to `OnPush`, and use a `trackBy` helper tied to a stable identifier so long lists stay smooth even while mocked data updates frequently.

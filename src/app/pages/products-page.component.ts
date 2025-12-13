@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -57,6 +57,7 @@ export interface Product {
     CartIconComponent,
     WishlistIconComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <!-- Navbar -->
@@ -105,6 +106,15 @@ export interface Product {
                 class="text-gray-200 hover:text-white transition font-medium"
               >
                 Mon Compte
+              </button>
+              <button 
+                type="button"
+                mat-button
+                *ngIf="isAuthenticated$ | async"
+                routerLink="/admin/dashboard"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Admin
               </button>
               <button 
                 type="button"
@@ -303,7 +313,7 @@ export interface Product {
             >
               ← Prev
             </button>
-            <ng-container *ngFor="let page of pageRange">
+            <ng-container *ngFor="let page of pageRange; trackBy: trackByPage">
               <button
                 type="button"
                 (click)="setPage(page)"
@@ -403,6 +413,10 @@ export class ProductsPageComponent implements OnInit, OnDestroy {
     this.isAuthenticated$ = this.store.select(selectIsAuthenticated);
     this.error$ = this.store.select(selectProductsError);
     this.cartItems$ = this.store.select(selectCartItems);
+  }
+
+  trackByPage(_index: number, page: number): number {
+    return page;
   }
 
   ngOnInit(): void {

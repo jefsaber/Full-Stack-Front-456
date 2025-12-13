@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
@@ -20,6 +20,7 @@ import { WishlistIconComponent } from '../components/wishlist-icon/wishlist-icon
   standalone: true,
   selector: 'app-cart-page',
   imports: [CommonModule, RouterLink, MatButtonModule, CartIconComponent, WishlistIconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 p-6 relative overflow-hidden">
       <nav class="backdrop-blur-md bg-white/10 border-b border-white/20 sticky top-0 z-50">
@@ -43,6 +44,9 @@ import { WishlistIconComponent } from '../components/wishlist-icon/wishlist-icon
               </button>
               <button type="button" mat-button *ngIf="isAuthenticated$ | async" routerLink="/account/profile" class="text-gray-200 hover:text-white transition font-medium">
                 Mon Compte
+              </button>
+              <button type="button" mat-button *ngIf="isAuthenticated$ | async" routerLink="/admin/dashboard" class="text-gray-200 hover:text-white transition font-medium">
+                Admin
               </button>
               <button type="button" mat-button routerLink="/dev" class="text-gray-200 hover:text-white transition font-medium">
                 Dev

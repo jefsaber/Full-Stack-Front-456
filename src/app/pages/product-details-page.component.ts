@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -48,6 +48,7 @@ interface Product {
   standalone: true,
   selector: 'app-product-details',
   imports: [CommonModule, RouterLink, MatSnackBarModule, MatButtonModule, MatIconModule, ReactiveFormsModule, CartIconComponent, WishlistIconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <!-- Navbar -->
@@ -96,6 +97,15 @@ interface Product {
                 class="text-gray-200 hover:text-white transition font-medium"
               >
                 Mon Compte
+              </button>
+              <button 
+                type="button"
+                mat-button
+                *ngIf="isAuthenticated$ | async"
+                routerLink="/admin/dashboard"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Admin
               </button>
               <button 
                 type="button"
@@ -363,13 +373,13 @@ interface Product {
                       <ng-container *ngIf="reviews$ | async as reviewsList">
                         <div *ngIf="reviewsList.length; else noReviews" class="space-y-4">
                           <article
-                            *ngFor="let review of reviewsList"
+                            *ngFor="let review of reviewsList; trackBy: trackByReview"
                             class="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2"
                           >
                             <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-300">
                               <div class="flex items-center gap-2">
                                 <span class="flex items-center gap-0.5 text-yellow-300">
-                                  <ng-container *ngFor="let star of [1, 2, 3, 4, 5]">
+                                  <ng-container *ngFor="let star of [1, 2, 3, 4, 5]; trackBy: trackByNumber">
                                     <span [class]="star <= review.rating ? 'text-yellow-400 text-base' : 'text-white/20 text-base'">★</span>
                                   </ng-container>
                                 </span>
@@ -407,7 +417,7 @@ interface Product {
                           formControlName="rating"
                           class="review-select w-full mt-2 border text-white px-3 py-2 rounded-lg text-sm"
                         >
-                          <option *ngFor="let value of [5, 4, 3, 2, 1]" [value]="value">{{ value }} étoiles</option>
+                          <option *ngFor="let value of [5, 4, 3, 2, 1]; trackBy: trackByNumber" [value]="value">{{ value }} étoiles</option>
                         </select>
                       </div>
                       <div>
@@ -747,6 +757,14 @@ export class ProductDetailsPageComponent implements OnInit, OnDestroy {
 
     // Reset quantity
     this.quantity = 1;
+  }
+
+  trackByReview(_index: number, review: Review): number {
+    return review.id;
+  }
+
+  trackByNumber(_index: number, value: number): number {
+    return value;
   }
 
   isProductInCart(): Observable<boolean> {

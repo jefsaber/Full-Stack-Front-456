@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -39,6 +39,7 @@ interface Product {
     CartIconComponent,
     WishlistIconComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <nav class="backdrop-blur-md bg-white/10 border-b border-white/20 sticky top-0 z-50">

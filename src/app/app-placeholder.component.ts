@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
@@ -14,6 +14,7 @@ import { WishlistIconComponent } from './components/wishlist-icon/wishlist-icon.
   standalone: true,
   selector: 'app-placeholder',
   imports: [CommonModule, RouterLink, MatButtonModule, MatCardModule, MatIconModule, CartIconComponent, WishlistIconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <!-- Navbar -->
@@ -62,6 +63,15 @@ import { WishlistIconComponent } from './components/wishlist-icon/wishlist-icon.
                 class="text-gray-200 hover:text-white transition font-medium"
               >
                 Mon Compte
+              </button>
+              <button 
+                type="button"
+                mat-button
+                *ngIf="isAuthenticated$ | async"
+                routerLink="/admin/dashboard"
+                class="text-gray-200 hover:text-white transition font-medium"
+              >
+                Admin
               </button>
               <button 
                 type="button"

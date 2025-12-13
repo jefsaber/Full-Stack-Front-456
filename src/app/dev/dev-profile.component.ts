@@ -1,9 +1,8 @@
 import { Component, signal } from '@angular/core';
-import { CommonModule, JsonPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 
 interface UserProfile {
   fullName: string;
@@ -17,7 +16,7 @@ interface UserProfile {
 @Component({
   standalone: true,
   selector: 'app-dev-profile',
-  imports: [CommonModule, JsonPipe, FormsModule, RouterLink, MatButtonModule, MatCardModule],
+  imports: [CommonModule, FormsModule, RouterLink, MatButtonModule],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <nav class="backdrop-blur-md bg-white/10 border-b border-white/20 sticky top-0 z-50">
@@ -52,11 +51,16 @@ interface UserProfile {
           >
             Fetch Profile
           </button>
-          @if (profile(); as current)
-            <pre class="rounded-2xl bg-slate-950/70 p-4 text-sm text-emerald-200 overflow-x-auto">{{ current | json }}</pre>
-          @else
+          <div *ngIf="profile() as current; else profilePlaceholder">
+            <pre
+              class="rounded-2xl bg-slate-950/70 p-4 text-sm text-emerald-200 overflow-x-auto"
+            >
+              {{ current | json }}
+            </pre>
+          </div>
+          <ng-template #profilePlaceholder>
             <p class="text-gray-400 text-sm">Click "Fetch Profile" to load the current user.</p>
-          }
+          </ng-template>
         </div>
 
         <div class="space-y-2">
@@ -77,7 +81,7 @@ interface UserProfile {
               <select
                 [(ngModel)]="updatePayload.preferences.newsletter"
                 name="newsletter"
-                class="bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white"
+                class="bg-slate-950/60 border border-white/10 rounded-lg px-3 py-2 text-white"
               >
                 <option [value]="true">Enabled</option>
                 <option [value]="false">Disabled</option>
@@ -103,14 +107,14 @@ interface UserProfile {
             Apply Update
           </button>
         </form>
-        @if (updateResp(); as resp)
-          <pre class="rounded-2xl bg-slate-950/70 p-4 text-sm text-emerald-200 overflow-x-auto">{{ resp | json }}</pre>
-        }
-        @if (error())
-          <div class="rounded-2xl bg-red-500/20 border border-red-500/50 p-4 text-sm text-red-200">
-            {{ error() }}
-          </div>
-        }
+        <ng-container *ngIf="updateResp() as resp">
+          <pre class="rounded-2xl bg-slate-950/70 p-4 text-sm text-emerald-200 overflow-x-auto">
+            {{ resp | json }}
+          </pre>
+        </ng-container>
+        <div *ngIf="error() as message" class="rounded-2xl bg-red-500/20 border border-red-500/50 p-4 text-sm text-red-200">
+          {{ message }}
+        </div>
       </div>
     </div>
   `,
@@ -123,7 +127,7 @@ export class DevProfileComponent {
   readonly updateResp = signal<UserProfile | null>(null);
   readonly error = signal<string | null>(null);
 
-  updatePayload: Partial<UserProfile> = {
+  updatePayload: Pick<UserProfile, 'preferences'> & Partial<Pick<UserProfile, 'fullName'>> = {
     fullName: '',
     preferences: {
       newsletter: true,

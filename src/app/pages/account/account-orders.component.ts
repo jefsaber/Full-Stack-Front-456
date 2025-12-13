@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
@@ -17,6 +17,7 @@ import { WishlistIconComponent } from '../../components/wishlist-icon/wishlist-i
   selector: 'app-account-orders',
   standalone: true,
   imports: [CommonModule, RouterLink, MatButtonModule, MatIconModule, CartIconComponent, WishlistIconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <!-- Navbar -->
@@ -130,7 +131,7 @@ import { WishlistIconComponent } from '../../components/wishlist-icon/wishlist-i
               </a>
             </div>
 
-            <div *ngFor="let order of orders" class="bg-white/5 backdrop-blur-md rounded-2xl border mb-4 border-white/10 p-6 hover:border-white/20 transition-all">
+            <div *ngFor="let order of orders; trackBy: trackByOrder" class="bg-white/5 backdrop-blur-md rounded-2xl border mb-4 border-white/10 p-6 hover:border-white/20 transition-all">
               <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <!-- Order Info -->
                 <div class="flex-1">
@@ -214,6 +215,10 @@ export class AccountOrdersComponent implements OnInit {
 
   ngOnInit(): void {
     this.store.dispatch(UserActions.loadUserOrders());
+  }
+
+  trackByOrder(_index: number, order: OrderSummary): string {
+    return order.id;
   }
 
   logout(): void {

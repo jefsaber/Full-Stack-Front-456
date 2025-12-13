@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
@@ -17,6 +17,7 @@ import { WishlistIconComponent } from '../../components/wishlist-icon/wishlist-i
   selector: 'app-account-order-details',
   standalone: true,
   imports: [CommonModule, RouterLink, MatButtonModule, MatIconModule, CartIconComponent, WishlistIconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <!-- Navbar -->
@@ -159,7 +160,7 @@ import { WishlistIconComponent } from '../../components/wishlist-icon/wishlist-i
           <div class="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-8">
             <h2 class="text-2xl font-bold text-white mb-6">Articles commandés</h2>
             <div class="space-y-4">
-              <div *ngFor="let item of order.items" class="flex justify-between items-center pb-4 border-b border-white/10">
+              <div *ngFor="let item of order.items; trackBy: trackByOrderItem" class="flex justify-between items-center pb-4 border-b border-white/10">
                 <div class="flex-1">
                   <p class="text-white font-semibold">{{ item.productName }}</p>
                   <p class="text-gray-400 text-sm">Quantité : {{ item.quantity }}</p>
@@ -251,6 +252,10 @@ export class AccountOrderDetailsComponent implements OnInit {
         this.store.dispatch(UserActions.loadOrderDetail({ orderId }));
       }
     });
+  }
+
+  trackByOrderItem(_index: number, item: OrderDetail['items'][number]): number {
+    return item.productId;
   }
 
   logout(): void {
