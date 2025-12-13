@@ -7,6 +7,7 @@ export interface Product {
   price: number;
   created_at: string;
   avgRating: number;
+  imageUrl?: string;
 }
 
 @Component({
@@ -34,4 +35,5 @@ export class ProductCardComponent implements Product {
   @Input() price!: number;
   @Input() created_at!: string;
   @Input() avgRating!: number;
+  @Input() imageUrl?: string;
 }

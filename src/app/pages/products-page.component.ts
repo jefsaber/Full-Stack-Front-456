@@ -36,6 +36,7 @@ export interface Product {
   price: number;
   created_at: string;
   avgRating: number;
+  imageUrl?: string;
 }
 
 @Component({

@@ -42,6 +42,7 @@ interface Product {
   stock: number;
   lowStockThreshold: number;
   created_at: string;
+  imageUrl?: string;
 }
 
 @Component({
@@ -183,14 +184,24 @@ interface Product {
           } @else {
             @let product = (product$ | async);
             @if (product) {
-          <!-- Product Content -->
+            <!-- Product Content -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- Image Placeholder -->
-            <div class="bg-linear-to-br from-emerald-600/30 to-cyan-600/30 backdrop-blur-md border border-white/10 rounded-2xl p-12 flex items-center justify-center h-96">
-              <div class="text-center">
-                <p class="text-8xl mb-4">📦</p>
-                <p class="text-gray-300">Product Image</p>
-              </div>
+            <!-- Product Image -->
+            <div class="bg-linear-to-br from-emerald-600/30 to-cyan-600/30 backdrop-blur-md border border-white/10 rounded-2xl p-2 flex items-center justify-center h-96">
+              <ng-container *ngIf="product.imageUrl; else placeholderImage">
+                <img
+                  [src]="product.imageUrl"
+                  [alt]="'Photo du produit ' + product.name"
+                  class="h-full w-full object-cover rounded-2xl shadow-2xl shadow-black/60"
+                  loading="lazy"
+                />
+              </ng-container>
+              <ng-template #placeholderImage>
+                <div class="text-center">
+                  <p class="text-8xl mb-4">📦</p>
+                  <p class="text-gray-300">Image indisponible</p>
+                </div>
+              </ng-template>
             </div>
 
             <!-- Product Info -->

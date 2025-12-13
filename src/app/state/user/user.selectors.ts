@@ -57,6 +57,14 @@ export const selectOrdersGroupedByStatus = createSelector(
   })
 );
 
+export type OrderStatus = OrderSummary['status'];
+
+export const selectOrdersByStatus = (status: OrderStatus) =>
+  createSelector(
+    selectUserOrders,
+    (orders) => orders.filter((order) => order.status === status)
+  );
+
 export interface OrderStats {
   count: number;
   totalSpent: number;

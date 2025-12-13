@@ -13,6 +13,7 @@ import { Observable } from 'rxjs';
     <div class="relative">
       <a
         routerLink="/shop/cart"
+        aria-label="Afficher le panier"
         class="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 px-3 py-2 rounded-lg transition"
       >
         <span class="text-xl">🛒</span>

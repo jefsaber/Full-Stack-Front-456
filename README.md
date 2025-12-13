@@ -373,3 +373,36 @@ The app is ready to use. No configuration needed. Just run `ng serve` and start 
 - Every page or list component should stay on `ChangeDetectionStrategy.OnPush` unless there is a documented need to deviate. This keeps rendering predictable across the lazy-loaded modules and ensures the dashboard, account pages, checkout, and product listings only re-render when their inputs truly change.
 - Every `*ngFor` iteration over collections (products, cart items, orders, reviews, wishlist entries, recent dashboard stats, etc.) must include a `trackBy` function so Angular can reuse DOM nodes and avoid unnecessary re-render cycles.
 - When you introduce new lists or page components, double-check they are standalone, set to `OnPush`, and use a `trackBy` helper tied to a stable identifier so long lists stay smooth even while mocked data updates frequently.
+
+## Memoized Selectors
+
+- `selectCartTotalItems` computes the total quantity of items inside the cart and can be used in badges or summaries without recalculating unless the cart state changes.
+- `selectWishlistProducts` joins wishlist IDs with the product catalog so lists stay memoized and only update when either the catalog or selection shifts.
+- `selectOrdersByStatus(status)` produces a filtered list of orders for the requested status (`en_cours`, `expediee`, `livree`), which is handy for dashboards and grouped views.
+
+## Product Cache & Stale-While-Revalidate
+
+- `/shop/products` now benefits from a simple cache keyed on the active filters. When you revisit that page with the same criteria, the UI renders instantly from the cache, then a background refresh fetches the latest data and updates the list only if the payload has actually changed.
+- The implementation relies on `ProductsCacheService` plus the `refreshProducts` flow in `ProductsEffects`, so cached responses stay in sync with the mocked API while keeping navigation snappy.
+- Document this behavior when extending filtering or pagination so contributors understand why the list sometimes updates a moment after it first appears.
+
+---
+
+## Storybook
+
+The project ships a Storybook suite for the most interactive components. You will find five new "rich" stories under `src/app/components/*/*.stories.ts`:
+
+- `UserProfileForm` exercises the profile form with controls for `name`, `email`, and `newsletter`, and logs submissions when the form is saved.
+- `WishlistButton` lets you toggle the wishlist state, switch button sizes, and watch the console output.
+- `ReviewList` renders multiple review cards, exposes a rating range control, and logs the selected review.
+- `PromoSummary` shows active/expired states, live discount ranges, and logs promo actions.
+- `AdminStatsCard` demonstrates different dashboard scenarios while logging refresh requests.
+
+Run `npm run storybook` to launch the UI and interact with every control/action from your browser.
+
+## Accessibility (a11y)
+
+- Primary pages now expose visible focus rings via a global `:focus-visible` rule so keyboard users always know which element is active.
+- Icon buttons such as the cart and wishlist links carry `aria-label` attributes, and the navigation buttons rely on real text to stay operable with assistive tech, keeping each page keyboard-friendly.
+- Product details render an actual `img` element with descriptive alt text (e.g., “Photo du produit X”) and fall back to a textual placeholder, ensuring we never ship unlabeled visuals to screen readers.
+- Continue to test the experience with tab/shift+tab navigation whenever you update a page or add a modal so the focus order and visibility stay intact.

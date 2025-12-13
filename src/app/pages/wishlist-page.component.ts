@@ -25,6 +25,7 @@ interface Product {
   avgRating: number;
   stock: number;
   created_at: string;
+  imageUrl?: string;
 }
 
 @Component({

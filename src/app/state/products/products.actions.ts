@@ -19,6 +19,14 @@ export interface Product {
   reviews_count: number;
   owner_id: number;
   ratings: { user_id: number; value: number }[];
+  imageUrl?: string;
+}
+
+export interface ProductsResponse {
+  count: number;
+  next?: string | null;
+  previous?: string | null;
+  results: Product[];
 }
 
 export const loadProducts = createAction(
@@ -28,12 +36,17 @@ export const loadProducts = createAction(
 
 export const loadProductsSuccess = createAction(
   '[Products] Load Products Success',
-  props<{ data: { count: number; results: Product[] } }>()
+  props<{ data: ProductsResponse }>()
 );
 
 export const loadProductsFailure = createAction(
   '[Products] Load Products Failure',
   props<{ error: string }>()
+);
+
+export const refreshProducts = createAction(
+  '[Products] Refresh Products',
+  props<{ filters?: ProductsFilters; cacheKey: string }>()
 );
 
 export const loadRating = createAction(
