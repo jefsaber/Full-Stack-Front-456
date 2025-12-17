@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import * as CartActions from './cart.actions';
 import { selectCartItems } from './cart.selectors';
 import { applyPromoCode } from '../../../mocks/promo';
+import { NotificationService } from '../../services/notification.service';
 
 const CART_STORAGE_KEY = 'shop_cart_state';
 
@@ -13,6 +14,7 @@ const CART_STORAGE_KEY = 'shop_cart_state';
 export class CartEffects {
   private readonly actions$ = inject(Actions);
   private readonly store = inject(Store);
+  private readonly notification = inject(NotificationService);
 
   constructor() {
     this.initializePersistence();
@@ -51,6 +53,31 @@ export class CartEffects {
         }
       })
     )
+  );
+
+  applyPromoSuccess$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(CartActions.applyPromoSuccess),
+        tap(({ result }) => {
+          const discount = result.discount;
+          if (discount > 0) {
+            this.notification.success(`Code promo appliqué ! Remise de €${discount.toFixed(2)}`);
+          }
+        })
+      ),
+    { dispatch: false }
+  );
+
+  applyPromoFailure$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(CartActions.applyPromoFailure),
+        tap(({ error }) => {
+          this.notification.error(`Code promo invalide : ${error}`);
+        })
+      ),
+    { dispatch: false }
   );
 }
 

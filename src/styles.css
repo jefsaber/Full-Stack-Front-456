@@ -13,3 +13,28 @@ body {
   outline: 3px solid rgba(16, 185, 129, 0.8);
   outline-offset: 3px;
 }
+
+/* Global Notification Styles */
+.notification-success {
+  --mdc-snackbar-container-color: #065f46 !important;
+  --mdc-snackbar-supporting-text-color: #d1fae5 !important;
+  --mat-snack-bar-button-color: #6ee7b7 !important;
+}
+
+.notification-error {
+  --mdc-snackbar-container-color: #991b1b !important;
+  --mdc-snackbar-supporting-text-color: #fee2e2 !important;
+  --mat-snack-bar-button-color: #fca5a5 !important;
+}
+
+.notification-warning {
+  --mdc-snackbar-container-color: #92400e !important;
+  --mdc-snackbar-supporting-text-color: #fef3c7 !important;
+  --mat-snack-bar-button-color: #fcd34d !important;
+}
+
+.notification-info {
+  --mdc-snackbar-container-color: #1e40af !important;
+  --mdc-snackbar-supporting-text-color: #dbeafe !important;
+  --mat-snack-bar-button-color: #93c5fd !important;
+}

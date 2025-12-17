@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -25,10 +25,16 @@ import * as AuthActions from '../state/auth/auth.actions';
 import * as WishlistActions from '../state/wishlist/wishlist.actions';
 import { selectIsProductInWishlist } from '../state/wishlist/wishlist.selectors';
 import { Observable, Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, takeUntil } from 'rxjs/operators';
 import { SkeletonLoaderComponent } from '../components/skeleton-loader/skeleton-loader.component';
 import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
 import { WishlistIconComponent } from '../components/wishlist-icon/wishlist-icon.component';
-import { takeUntil } from 'rxjs/operators';
+
+interface CatalogFilters {
+  minRating: number;
+  ordering: string;
+  page: number;
+}
 
 export interface Product {
   id: number;
@@ -229,6 +235,13 @@ export interface Product {
               <span class="text-2xl">⚠️</span>
               {{ error }}
             </p>
+            <button
+              type="button"
+              (click)="retryFetch()"
+              class="mt-4 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-semibold transition"
+            >
+              Réessayer
+            </button>
           </div>
         }
 
@@ -299,7 +312,8 @@ export interface Product {
             } @empty {
               <div class="col-span-full text-center py-16">
                 <p class="text-2xl text-gray-500">📦</p>
-                <p class="text-gray-400 text-lg mt-2">No products found</p>
+                <p class="text-gray-400 text-lg mt-2">Aucun produit ne correspond à vos filtres.</p>
+                <p class="text-sm text-gray-500 mt-1">Essayez de modifier les critères de recherche.</p>
               </div>
             }
           </div>
@@ -398,11 +412,15 @@ export class ProductsPageComponent implements OnInit, OnDestroy {
   totalPages = 0;
   pageRange: number[] = [];
   private destroy$ = new Subject<void>();
+  private readonly filterDebounceMs = 400;
+  private lastQueryFilters: CatalogFilters = { minRating: 0, ordering: '', page: 1 };
 
   constructor(
     private fb: FormBuilder,
     private store: Store,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private route: ActivatedRoute,
+    private router: Router
   ) {
     this.filterForm = this.fb.group({
       minRating: [0],
@@ -433,7 +451,8 @@ export class ProductsPageComponent implements OnInit, OnDestroy {
         this.updatePageRange();
       });
 
-    this.applyFilters();
+    this.listenToFilterChanges();
+    this.syncFiltersWithQueryParams();
   }
 
   logout(): void {
@@ -441,18 +460,18 @@ export class ProductsPageComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
-    this.currentPage = 0; // Reset to first page when filters change
-    this.updatePageRange();
-    this.fetchProducts();
+    const filters = this.buildFormFilters();
+    this.updateCatalogQuery({ ...filters, page: 1 });
   }
 
   setPage(pageIndex: number): void {
     if (pageIndex < 0 || pageIndex >= this.totalPages || pageIndex === this.currentPage) {
       return;
     }
+    this.updateCatalogQuery({ page: pageIndex + 1 });
+  }
 
-    this.currentPage = pageIndex;
-    this.updatePageRange();
+  retryFetch(): void {
     this.fetchProducts();
   }
 
@@ -460,11 +479,76 @@ export class ProductsPageComponent implements OnInit, OnDestroy {
     const filters = {
       page: this.currentPage + 1,
       pageSize: this.pageSize,
-      minRating: this.filterForm.get('minRating')?.value || 0,
-      ordering: this.filterForm.get('ordering')?.value || '',
+      minRating: this.lastQueryFilters.minRating,
+      ordering: this.lastQueryFilters.ordering,
     };
-
     this.store.dispatch(ProductsActions.loadProducts({ filters }));
+  }
+
+  private listenToFilterChanges(): void {
+    this.filterForm.valueChanges
+      .pipe(
+        debounceTime(this.filterDebounceMs),
+        map((value) => ({
+          minRating: Number(value.minRating) || 0,
+          ordering: value.ordering ?? '',
+        })),
+        distinctUntilChanged((prev, curr) => prev.minRating === curr.minRating && prev.ordering === curr.ordering),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((filters) => {
+        this.updateCatalogQuery({ ...filters, page: 1 });
+      });
+  }
+
+  private syncFiltersWithQueryParams(): void {
+    this.route.queryParamMap
+      .pipe(
+        map((params) => ({
+          page: Math.max(1, Number(params.get('page')) || 1),
+          minRating: Number(params.get('minRating')) || 0,
+          ordering: params.get('ordering') ?? '',
+        })),
+        distinctUntilChanged((prev, curr) => this.areFiltersEqual(prev, curr)),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((queryFilters) => {
+        this.lastQueryFilters = queryFilters;
+        this.filterForm.patchValue(
+          { minRating: queryFilters.minRating, ordering: queryFilters.ordering },
+          { emitEvent: false }
+        );
+        this.currentPage = Math.max(0, queryFilters.page - 1);
+        this.updatePageRange();
+        this.fetchProducts();
+      });
+  }
+
+  private updateCatalogQuery(params: Partial<CatalogFilters>): void {
+    const nextFilters: CatalogFilters = { ...this.lastQueryFilters, ...params };
+    if (this.areFiltersEqual(nextFilters, this.lastQueryFilters)) {
+      return;
+    }
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        minRating: nextFilters.minRating || null,
+        ordering: nextFilters.ordering || null,
+        page: nextFilters.page > 1 ? nextFilters.page : null,
+      },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  private buildFormFilters(): Omit<CatalogFilters, 'page'> {
+    return {
+      minRating: Number(this.filterForm.get('minRating')?.value) || 0,
+      ordering: this.filterForm.get('ordering')?.value ?? '',
+    };
+  }
+
+  private areFiltersEqual(a: CatalogFilters, b: CatalogFilters): boolean {
+    return a.page === b.page && a.minRating === b.minRating && a.ordering === b.ordering;
   }
 
   private updatePageRange(): void {

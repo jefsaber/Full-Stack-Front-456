@@ -2,17 +2,19 @@ import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Action } from '@ngrx/store';
 import { concat, EMPTY, Observable, of } from 'rxjs';
-import { map, mergeMap } from 'rxjs/operators';
+import { map, mergeMap, tap } from 'rxjs/operators';
 import * as ProductsActions from './products.actions';
 import { ProductsCacheService } from './products-cache.service';
 import { ProductsFilters, ProductsResponse } from './products.actions';
 import { products } from '../../../mocks/data';
 import { avgRating, paginate } from '../../../mocks/utils';
+import { NotificationService } from '../../services/notification.service';
 
 @Injectable()
 export class ProductsEffects {
   private readonly actions$ = inject(Actions);
   private readonly cache = inject(ProductsCacheService);
+  private readonly notification = inject(NotificationService);
 
   loadProducts$ = createEffect(() =>
     this.actions$.pipe(
@@ -75,6 +77,28 @@ export class ProductsEffects {
         });
       })
     )
+  );
+
+  loadProductsFailure$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(ProductsActions.loadProductsFailure),
+        tap(({ error }) => {
+          this.notification.error(`Erreur lors du chargement des produits : ${error}`);
+        })
+      ),
+    { dispatch: false }
+  );
+
+  loadRatingFailure$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(ProductsActions.loadRatingFailure),
+        tap(({ error }) => {
+          this.notification.error(`Erreur lors du chargement de la note : ${error}`);
+        })
+      ),
+    { dispatch: false }
   );
 
   private resolveProducts(filters?: ProductsFilters): ProductsResponse {

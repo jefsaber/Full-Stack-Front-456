@@ -1,16 +1,18 @@
 import { Injectable, inject } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { map, mergeMap, withLatestFrom } from 'rxjs/operators';
+import { map, mergeMap, withLatestFrom, tap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import * as ReviewsActions from './reviews.actions';
 import { selectReviewFilters, selectReviewProductId } from './reviews.selectors';
 import { addReview, getReviewsForProduct, getReviewStats } from '../../../mocks/reviews';
+import { NotificationService } from '../../services/notification.service';
 
 @Injectable()
 export class ReviewsEffects {
   private readonly actions$ = inject(Actions);
   private readonly store = inject(Store);
+  private readonly notification = inject(NotificationService);
 
   loadReviews$ = createEffect(() =>
     this.actions$.pipe(
@@ -41,6 +43,28 @@ export class ReviewsEffects {
         }
       })
     )
+  );
+
+  postReviewSuccess$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(ReviewsActions.postReviewSuccess),
+        tap(() => {
+          this.notification.success('Avis publié avec succès ! Merci pour votre retour.');
+        })
+      ),
+    { dispatch: false }
+  );
+
+  postReviewFailure$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(ReviewsActions.postReviewFailure),
+        tap(({ error }) => {
+          this.notification.error(`Erreur lors de la publication de l'avis : ${error}`);
+        })
+      ),
+    { dispatch: false }
   );
 
   refreshAfterPost$ = createEffect(() =>

@@ -1,19 +1,21 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { Store } from '@ngrx/store';
 import {
   selectCartItems,
   selectCartBreakdown,
 } from '../../state/cart/cart.selectors';
-import { Observable, combineLatest } from 'rxjs';
+import { Observable, combineLatest, firstValueFrom } from 'rxjs';
 import { CartItem, CartPromoResult } from '../../state/cart/cart.actions';
 import * as CartActions from '../../state/cart/cart.actions';
 import { OrdersStorageService } from '../../services/orders-storage.service';
 import { OrderDetail } from '../../state/user/user.actions';
 import * as UserActions from '../../state/user/user.actions';
 import { take } from 'rxjs/operators';
+import { NotificationService } from '../../services/notification.service';
 
 interface OrderConfirmation {
   order_number: string;
@@ -21,6 +23,12 @@ interface OrderConfirmation {
   total: number;
   delivery_date: string;
   tracking_url: string;
+}
+
+interface StockValidationResponse {
+  valid: boolean;
+  message?: string;
+  summary?: Array<{ productId: number; productName: string; requested: number; available: number }>;
 }
 
 const EXPRESS_DELIVERY_FEE = 9.99;
@@ -232,6 +240,9 @@ export class CheckoutConfirmComponent implements OnInit {
   confirmedItems: OrderDetail['items'] = [];
   expressDeliveryFee = EXPRESS_DELIVERY_FEE;
 
+  private readonly http = inject(HttpClient);
+  private readonly notification = inject(NotificationService);
+
   constructor(
     private store: Store,
     private ordersStorage: OrdersStorageService
@@ -246,48 +257,71 @@ export class CheckoutConfirmComponent implements OnInit {
     this.previousStep.emit();
   }
 
-  placeOrder(): void {
+  async placeOrder(): Promise<void> {
     if (!this.termsAccepted) return;
 
     this.placing = true;
 
-    combineLatest([this.items$, this.breakdown$])
-      .pipe(take(1))
-      .subscribe(([items, breakdown]) => {
-        const expressCharge = this.addressData?.deliveryOption === 'express' ? EXPRESS_DELIVERY_FEE : 0;
-        const shippingWithExpress = breakdown.shipping + expressCharge;
-        const totalWithExpress = breakdown.grandTotal + expressCharge;
+    try {
+      // Get current cart items
+      const items = await firstValueFrom(this.items$.pipe(take(1)));
+      const breakdown = await firstValueFrom(this.breakdown$.pipe(take(1)));
 
-        const orderData = {
-          items,
-          total: totalWithExpress,
-          subtotal: breakdown.itemsTotal,
-          tax: breakdown.taxes,
-          shipping: shippingWithExpress,
-          address: this.addressData,
-          deliveryOption: this.addressData?.deliveryOption || 'standard',
-        };
+      // Validate stock before placing order
+      const stockPayload = items.map((item) => ({
+        productId: item.id,
+        quantity: item.quantity,
+      }));
 
-        const savedOrder = this.ordersStorage.addOrder(orderData);
+      const stockResponse = await firstValueFrom(
+        this.http.post<StockValidationResponse>('/api/cart/validate-stock/', stockPayload)
+      );
 
-        this.orderConfirmation = {
-          order_number: `ORD-${savedOrder.id}`,
-          status: 'confirmed',
-          total: totalWithExpress,
-          delivery_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-          tracking_url: savedOrder.trackingUrl || '',
-        };
-        this.confirmedItems = savedOrder.items || [];
-
+      if (!stockResponse.valid) {
+        this.notification.error('Stock insuffisant pour un ou plusieurs produits. Veuillez ajuster votre panier.');
         this.placing = false;
+        return;
+      }
 
-        this.store.dispatch(CartActions.clearCart());
-        this.store.dispatch(UserActions.addUserOrder({ order: savedOrder }));
-        if (savedOrder.deliveryAddress) {
-          this.store.dispatch(
-            UserActions.setUserDefaultAddress({ address: savedOrder.deliveryAddress })
-          );
-        }
-      });
+      // Stock is valid, proceed with order
+      const expressCharge = this.addressData?.deliveryOption === 'express' ? EXPRESS_DELIVERY_FEE : 0;
+      const shippingWithExpress = breakdown.shipping + expressCharge;
+      const totalWithExpress = breakdown.grandTotal + expressCharge;
+
+      const orderData = {
+        items,
+        total: totalWithExpress,
+        subtotal: breakdown.itemsTotal,
+        tax: breakdown.taxes,
+        shipping: shippingWithExpress,
+        address: this.addressData,
+        deliveryOption: this.addressData?.deliveryOption || 'standard',
+      };
+
+      const savedOrder = this.ordersStorage.addOrder(orderData);
+
+      this.orderConfirmation = {
+        order_number: `ORD-${savedOrder.id}`,
+        status: 'confirmed',
+        total: totalWithExpress,
+        delivery_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        tracking_url: savedOrder.trackingUrl || '',
+      };
+      this.confirmedItems = savedOrder.items || [];
+
+      this.placing = false;
+
+      this.notification.success('Commande confirmée ! Merci pour votre achat.');
+      this.store.dispatch(CartActions.clearCart());
+      this.store.dispatch(UserActions.addUserOrder({ order: savedOrder }));
+      if (savedOrder.deliveryAddress) {
+        this.store.dispatch(
+          UserActions.setUserDefaultAddress({ address: savedOrder.deliveryAddress })
+        );
+      }
+    } catch (error) {
+      this.notification.error('Une erreur est survenue lors de la validation. Veuillez réessayer.');
+      this.placing = false;
+    }
   }
 }

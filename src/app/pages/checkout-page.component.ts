@@ -7,6 +7,7 @@ import { CheckoutAddressComponent } from './checkout/step2-address.component';
 import { CheckoutConfirmComponent } from './checkout/step3-confirm.component';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { selectIsAuthenticated } from '../state/auth/auth.selectors';
 import * as AuthActions from '../state/auth/auth.actions';
 import { CartIconComponent } from '../components/cart-icon/cart-icon.component';
@@ -15,7 +16,7 @@ import { WishlistIconComponent } from '../components/wishlist-icon/wishlist-icon
 @Component({
   standalone: true,
   selector: 'app-checkout-page',
-  imports: [CommonModule, CheckoutSummaryComponent, CheckoutAddressComponent, CheckoutConfirmComponent, RouterLink, MatButtonModule, MatIconModule, CartIconComponent, WishlistIconComponent],
+  imports: [CommonModule, CheckoutSummaryComponent, CheckoutAddressComponent, CheckoutConfirmComponent, RouterLink, MatButtonModule, MatIconModule, MatSnackBarModule, CartIconComponent, WishlistIconComponent],
   template: `
     <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <!-- Navbar -->
@@ -166,13 +167,41 @@ export class CheckoutPageComponent {
   currentStep = 1;
   addressData: any | null = null;
 
-  constructor(private store: Store) {
+  constructor(
+    private store: Store,
+    private snackBar: MatSnackBar
+  ) {
     this.isAuthenticated$ = this.store.select(selectIsAuthenticated);
   }
 
+  /**
+   * Navigate to a specific step with validation
+   * Step 2 requires step 1 to be completed (automatically done)
+   * Step 3 requires addressData to be filled
+   */
   goToStep(step: number): void {
+    // Validate step 3: require address data
+    if (step === 3 && !this.isAddressValid()) {
+      this.snackBar.open(
+        'Veuillez renseigner votre adresse de livraison avant de continuer.',
+        'Fermer',
+        { duration: 4000, panelClass: ['warning-snackbar'] }
+      );
+      return;
+    }
+
     this.currentStep = step;
     window.scrollTo(0, 0);
+  }
+
+  /**
+   * Check if address data is complete
+   */
+  private isAddressValid(): boolean {
+    if (!this.addressData) return false;
+    
+    const { firstName, lastName, street, city, zipCode, country } = this.addressData;
+    return !!(firstName && lastName && street && city && zipCode && country);
   }
 
   onAddressNext(addressPayload: any): void {
