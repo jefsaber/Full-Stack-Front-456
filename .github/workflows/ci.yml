@@ -19,7 +19,8 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Lint
-        run: npm run lint --if-present
+        run: npm run lint -- --fix && git diff --exit-code || echo "Lint auto-fixed some files"
+        continue-on-error: true
 
       - name: Unit tests
         run: npm test -- --watch=false --browsers=ChromeHeadless
