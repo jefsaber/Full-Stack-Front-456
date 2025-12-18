@@ -4,6 +4,17 @@ A modern e-commerce frontend built with Angular 20 and NgRx. It's fully function
 
 ---
 
+## Commands
+
+| Command         | Description                  |
+| --------------- | ---------------------------- |
+| `npm run start` | Start the development server |
+| `npm test`      | Run unit tests               |
+| `npm run lint`  | Run ESLint                   |
+| `npm run build` | Build for production         |
+
+---
+
 ## What's Included
 
 ### Core Features (Meets Requirements)
@@ -406,3 +417,17 @@ Run `npm run storybook` to launch the UI and interact with every control/action 
 - Icon buttons such as the cart and wishlist links carry `aria-label` attributes, and the navigation buttons rely on real text to stay operable with assistive tech, keeping each page keyboard-friendly.
 - Product details render an actual `img` element with descriptive alt text (e.g., “Photo du produit X”) and fall back to a textual placeholder, ensuring we never ship unlabeled visuals to screen readers.
 - Continue to test the experience with tab/shift+tab navigation whenever you update a page or add a modal so the focus order and visibility stay intact.
+
+---
+
+## Quality
+
+This section covers how to run tests, linting, and what happens during continuous integration.
+
+- **Running unit tests**: Execute `npm test` to run the full test suite with Karma. For a single run without watch mode, use `npm test -- --no-watch --browsers=ChromeHeadless`. The project includes over 100 tests covering reducers, selectors, effects, and components.
+
+- **Running the linter**: Execute `npm run lint` to check your code against the ESLint rules configured for Angular and TypeScript. You can automatically fix many issues by running `npm run lint -- --fix`.
+
+- **What the CI does on pull requests**: When you open a pull request targeting the master branch, GitHub Actions automatically runs a workflow that installs dependencies, runs the linter, executes all unit tests, and builds the production bundle. If any step fails, the pull request will be blocked until the issues are resolved.
+
+- **Running with Docker (optional)**: If you have Docker installed, you can start the application in a container. Run `docker compose up --build` from the project root. Once the container is ready, open your browser and navigate to http://localhost:4200 to access the app. This is useful for testing the application in an isolated environment without installing Node.js locally.
